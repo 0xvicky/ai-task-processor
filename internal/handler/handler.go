@@ -6,7 +6,7 @@ import (
 )
 
 // default route for "/"
-func Handler(w http.ResponseWriter, r *http.Request) {
+func RootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Ai Task Processor running on port 6969")
 }
 
