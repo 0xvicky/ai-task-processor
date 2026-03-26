@@ -1,26 +1,17 @@
 package main
 
 import (
-	"fmt"
+	"ai-task-processor/internal/handler"
 	"net/http"
 )
 
-// default route for "/"
-func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Ai Task Processor running on port 6969")
-}
-
-func health(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Health is OK")
-}
-
 func main() {
 	println("AI-TASK-PROCESSOR")
-
 	//Routes
-	http.HandleFunc("/", handler)
-	http.HandleFunc("/health", health)
+	http.HandleFunc("/", handler.Handler)
+	http.HandleFunc("/health", handler.Health)
 
 	//Server
+	println("Server running at 6969")
 	http.ListenAndServe(":6969", nil)
 }
