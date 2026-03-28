@@ -14,3 +14,9 @@ type UserLogin struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+type APIResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Payload any    `json:"payload,omitempty"`
+}
