@@ -19,6 +19,7 @@ func main() {
 	http.HandleFunc("/", handler.RootHandler)
 	http.HandleFunc("/health", handler.Health)
 	http.HandleFunc("/createuser", handler.CreateUserHandler) //post req
+	http.HandleFunc("/login", handler.LoginUserHandler)       //post req
 
 	//Server
 	err := http.ListenAndServe(":6969", nil)

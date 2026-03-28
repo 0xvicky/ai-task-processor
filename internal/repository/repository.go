@@ -12,20 +12,20 @@ import (
 func CreateUserRepo(userDetail model.User) {
 	println("in repo")
 	fmt.Printf("%+v", userDetail)
-	//create table if not exist
-	createTableQuery := `CREATE TABLE IF NOT EXISTS users(
-	user_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	user_name TEXT NOT NULL,
-	user_email TEXT NOT NULL UNIQUE,
-	user_password TEXT NOT NULL,
-	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-	)`
-	_, createTableErr := db.Db.Exec(createTableQuery)
-	if createTableErr != nil {
-		log.Fatalf("Error occured while creating user:%v", createTableErr)
-	}
+	// //create table if not exist
+	// createTableQuery := `CREATE TABLE IF NOT EXISTS users(
+	// user_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	// user_name TEXT NOT NULL,
+	// user_email TEXT NOT NULL UNIQUE,
+	// user_password TEXT NOT NULL,
+	// created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	// )`
+	// _, createTableErr := db.Db.Exec(createTableQuery)
+	// if createTableErr != nil {
+	// 	log.Fatalf("Error occured while creating user:%v", createTableErr)
+	// }
 
-	fmt.Println("User table will be there !!!")
+	// fmt.Println("User table will be there !!!")
 
 	createUserQuery := `INSERT INTO users(user_name, user_email, user_password) VALUES($1,$2,$3);`
 
@@ -36,4 +36,14 @@ func CreateUserRepo(userDetail model.User) {
 	}
 	fmt.Printf("%v", res)
 
+}
+
+// get user info using email
+func GetUserByEmail(email string) model.User {
+	// println(email)
+	var user model.User
+	fetchUserQuery := `SELECT user_id, user_name,user_email, user_password, created_at FROM users WHERE user_email = $1;`
+	userInfo := db.Db.QueryRow(fetchUserQuery, email)
+	userInfo.Scan(&user.UserId, &user.Name, &user.Email, &user.Password, &user.CreatedAt)
+	return user
 }
