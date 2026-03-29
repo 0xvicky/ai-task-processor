@@ -20,3 +20,8 @@ type APIResponse struct {
 	Message string `json:"message"`
 	Payload any    `json:"payload,omitempty"`
 }
+
+type UserUpdate struct {
+	Name  *string `json:"name"`
+	Email *string `json:"email"`
+}

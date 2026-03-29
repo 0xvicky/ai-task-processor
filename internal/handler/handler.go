@@ -70,3 +70,18 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJsonResponse(w, 200, true, "Login Success", loginPayload)
 
 }
+
+// update user info
+func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	var updateUserInfo model.User
+	decoder := json.NewDecoder(r.Body)
+	decodeErr := decoder.Decode(&updateUserInfo)
+	if decodeErr != nil {
+		utils.WriteJsonResponse(w, 500, false, "Update decode failed", nil)
+		return
+	}
+
+}
+
+//delete user

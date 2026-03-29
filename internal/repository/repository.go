@@ -35,3 +35,8 @@ func GetUserByEmail(email string) (model.User, error) {
 	}
 	return user, nil
 }
+
+func UpdateUserRepo(userUpdateDetail model.UserUpdate, userId int) (model.User, error) {
+	updateQuery := `UPDATE users SET user_name=$1, user_email=$2 WHERE user_id=$3`
+
+}
