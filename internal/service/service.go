@@ -59,3 +59,7 @@ func LoginService(userLoginInfo model.UserLogin) (string, error) {
 	return "DUMMYTOKEN", nil
 
 }
+
+func UpdateService(userUpdateInfo model.UserUpdate) (model.User, error) {
+
+}
