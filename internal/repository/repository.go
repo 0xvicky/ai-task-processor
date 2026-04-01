@@ -4,6 +4,7 @@ import (
 	"ai-task-processor/internal/db"
 	"ai-task-processor/internal/model"
 	"fmt"
+	"strings"
 )
 
 // var db.Db *sql.DB = db.Db
@@ -37,6 +38,34 @@ func GetUserByEmail(email string) (model.User, error) {
 }
 
 func UpdateUserRepo(userUpdateDetail model.UserUpdate, userId int) (model.User, error) {
-	updateQuery := `UPDATE users SET user_name=$1, user_email=$2 WHERE user_id=$3`
+	var updatedUserRes model.User
+	updateQuery := `UPDATE users SET `
+	args := []any{}
+	i := 1
 
+	if userUpdateDetail.Email != nil {
+		updateQuery += fmt.Sprintf(`user_email = $%d, `, i)
+		args = append(args, *userUpdateDetail.Email)
+		i++
+	}
+	if userUpdateDetail.Name != nil {
+		updateQuery += fmt.Sprintf(`user_name=$%d, `, i)
+		args = append(args, *userUpdateDetail.Name)
+		i++
+	}
+	updateQuery = strings.TrimSuffix(updateQuery, ", ")
+	updateQuery += fmt.Sprintf(` WHERE user_id=$%d RETURNING user_id, user_name, user_email, created_at`, i)
+	args = append(args, userId)
+
+	if len(args) == 0 {
+		return model.User{}, fmt.Errorf("No args passed in update")
+	}
+	updatedUser := db.Db.QueryRow(updateQuery, args...)
+	updateScanErr := updatedUser.Scan(&updatedUserRes.UserId, &updatedUserRes.Name, &updatedUserRes.Email, &updatedUserRes.CreatedAt)
+
+	if updateScanErr != nil {
+		return model.User{}, fmt.Errorf("Update Scanner failed ! %w", updateScanErr)
+	}
+
+	return updatedUserRes, nil
 }

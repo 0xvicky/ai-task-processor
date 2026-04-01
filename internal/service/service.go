@@ -60,6 +60,20 @@ func LoginService(userLoginInfo model.UserLogin) (string, error) {
 
 }
 
-func UpdateService(userUpdateInfo model.UserUpdate) (model.User, error) {
+func UpdateService(userUpdateInfo model.UserUpdate, userId int) (model.User, error) {
 
+	if userUpdateInfo.Email == nil && userUpdateInfo.Name == nil {
+		return model.User{}, fmt.Errorf("Both fields are empty !")
+	}
+
+	updatedUserRes, updateErr := repository.UpdateUserRepo(userUpdateInfo, userId)
+
+	if errors.Is(updateErr, sql.ErrNoRows) {
+		return model.User{}, fmt.Errorf("No user found:%w", updateErr)
+	}
+	if updateErr != nil {
+		return model.User{}, fmt.Errorf("Update user failed:%w", updateErr)
+	}
+
+	return updatedUserRes, nil
 }
