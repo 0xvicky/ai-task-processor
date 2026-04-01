@@ -30,11 +30,10 @@ func WriteJsonResponse(w http.ResponseWriter, statusCode int, status bool, messa
 // jwt secret key from .env
 var secretKey = []byte(os.Getenv("JWT_SECRET"))
 
-func JWTInit(jwtInfo model.JWTModel) (string, error) {
+func JWTInit(userId int) (string, error) {
 	// println("%s", secretKey)
 	claims := jwt.MapClaims{
-		"userId": jwtInfo.UserId,
-		"email":  jwtInfo.Email,
+		"userId": userId,
 		"exp":    time.Now().Add(time.Hour * 6).Unix(),
 		"iss":    "ai-task-processor",
 	}

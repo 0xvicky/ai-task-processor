@@ -26,7 +26,7 @@ type UserUpdate struct {
 	Email *string `json:"email"`
 }
 
-type JWTModel struct {
-	UserId *int
-	Email  *string
+type JwtAuthRes struct {
+	UserId   int
+	JwtToken string
 }

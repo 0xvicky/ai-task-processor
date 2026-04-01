@@ -37,13 +37,8 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		utils.WriteJsonResponse(w, 500, false, userCreateErr.Error(), nil)
 		return
 	}
-	// w.WriteHeader(http.StatusCreated)
-	payload := struct {
-		UserId int `json:"user_id"`
-	}{
-		UserId: userIdPayload,
-	}
-	utils.WriteJsonResponse(w, 201, true, "User Created ✅", payload)
+
+	utils.WriteJsonResponse(w, 201, true, "User Created ✅", userIdPayload)
 }
 
 func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -56,16 +51,10 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginToken, loginErr := service.LoginService(userLoginInfo)
+	loginPayload, loginErr := service.LoginService(userLoginInfo)
 	if loginErr != nil {
 		utils.WriteJsonResponse(w, 401, false, loginErr.Error(), nil)
 		return
-	}
-
-	loginPayload := struct {
-		Token string `json:"token"`
-	}{
-		Token: loginToken,
 	}
 
 	utils.WriteJsonResponse(w, 200, true, "Login Success", loginPayload)

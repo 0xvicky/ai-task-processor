@@ -11,14 +11,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func CreateUserService(newUser model.User) (int, error) {
+func CreateUserService(newUser model.User) (model.JwtAuthRes, error) {
 	_, fetchErr := repository.GetUserByEmail(newUser.Email)
 
 	if fetchErr == nil {
-		return 0, fmt.Errorf("user already exist")
+		return model.JwtAuthRes{}, fmt.Errorf("user already exist")
 	}
 	if !errors.Is(fetchErr, sql.ErrNoRows) {
-		return 0, fmt.Errorf("internal db error")
+		return model.JwtAuthRes{}, fmt.Errorf("internal db error")
 	}
 
 	//get the password out of body
@@ -27,49 +27,58 @@ func CreateUserService(newUser model.User) (int, error) {
 	hashPass, hashErr := bcrypt.GenerateFromPassword([]byte(plainPass), bcrypt.DefaultCost)
 
 	if hashErr != nil {
-		return 0, fmt.Errorf("password hashing failed")
+		return model.JwtAuthRes{}, fmt.Errorf("password hashing failed")
 	}
 	//save the string(hash) back to struct
 	newUser.Password = string(hashPass)
 	//passing the user details to the db-repository
 	userId, creationErr := repository.CreateUserRepo(newUser)
 	if creationErr != nil {
-		return 0, fmt.Errorf("internal db error")
+		return model.JwtAuthRes{}, fmt.Errorf("internal db error")
 	}
 
-	return userId, nil
+	token, jwtErr := utils.JWTInit(userId)
+
+	if jwtErr != nil {
+		return model.JwtAuthRes{}, fmt.Errorf("Error while generating jwt:%w", jwtErr)
+	}
+	newUserRes := model.JwtAuthRes{
+		UserId:   userId,
+		JwtToken: token,
+	}
+
+	return newUserRes, nil
 }
 
-func LoginService(userLoginInfo model.UserLogin) (string, error) {
+func LoginService(userLoginInfo model.UserLogin) (model.JwtAuthRes, error) {
 	//check if user exist or not, if exist fetch the user details
 	userInfo, fetchErr := repository.GetUserByEmail(userLoginInfo.Email)
 	if errors.Is(fetchErr, sql.ErrNoRows) {
-		return "", fmt.Errorf("invalid credentials")
+		return model.JwtAuthRes{}, fmt.Errorf("invalid credentials")
 	}
 	if fetchErr != nil {
-		return "", fmt.Errorf("fetch user failed:%w", fetchErr)
+		return model.JwtAuthRes{}, fmt.Errorf("fetch user failed:%w", fetchErr)
 	}
 	// //if exist, then hash the password and compare with stored hash pass
 
 	hashErr := bcrypt.CompareHashAndPassword([]byte(userInfo.Password), []byte(userLoginInfo.Password))
 	if hashErr != nil {
-		return "", fmt.Errorf("invalid credentails")
+		return model.JwtAuthRes{}, fmt.Errorf("invalid credentails")
 		// w.WriteHeader(http.StatusBadRequest)
 	}
 
-	//generate jwt token using userId and email
-	jwtInfo := model.JWTModel{
-		UserId: &userInfo.UserId,
-		Email:  &userInfo.Email,
-	}
-
-	token, jwtErr := utils.JWTInit(jwtInfo)
+	token, jwtErr := utils.JWTInit(userInfo.UserId)
 
 	if jwtErr != nil {
-		return "", fmt.Errorf("Error while generating jwt:%w", jwtErr)
+		return model.JwtAuthRes{}, fmt.Errorf("Error while generating jwt:%w", jwtErr)
 	}
 
-	return token, nil
+	jwtRes := model.JwtAuthRes{
+		UserId:   userInfo.UserId,
+		JwtToken: token,
+	}
+
+	return jwtRes, nil
 
 }
 
