@@ -3,6 +3,7 @@ package service
 import (
 	"ai-task-processor/internal/model"
 	"ai-task-processor/internal/repository"
+	"ai-task-processor/internal/utils"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -56,7 +57,19 @@ func LoginService(userLoginInfo model.UserLogin) (string, error) {
 		// w.WriteHeader(http.StatusBadRequest)
 	}
 
-	return "DUMMYTOKEN", nil
+	//generate jwt token using userId and email
+	jwtInfo := model.JWTModel{
+		UserId: &userInfo.UserId,
+		Email:  &userInfo.Email,
+	}
+
+	token, jwtErr := utils.JWTInit(jwtInfo)
+
+	if jwtErr != nil {
+		return "", fmt.Errorf("Error while generating jwt:%w", jwtErr)
+	}
+
+	return token, nil
 
 }
 
@@ -87,6 +100,9 @@ func DeleteUserService(userId int) (model.User, error) {
 	}
 
 	deletedUserRes, deleteErr := repository.DeleteUserRepo(userId)
+	if errors.Is(deleteErr, sql.ErrNoRows) {
+		return model.User{UserId: userId}, nil
+	}
 	if deleteErr != nil {
 		return model.User{}, fmt.Errorf("Delete User Failed:%w", deleteErr)
 	}

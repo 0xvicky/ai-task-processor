@@ -126,11 +126,13 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	decodeErr := decoder.Decode(&req)
 	if decodeErr != nil {
 		utils.WriteJsonResponse(w, 400, false, decodeErr.Error(), nil)
+		return
 	}
 
 	deletedUserRes, deleteErr := service.DeleteUserService(req.UserId)
 	if deleteErr != nil {
 		utils.WriteJsonResponse(w, 500, false, deleteErr.Error(), nil)
+		return
 	}
 
 	utils.WriteJsonResponse(w, 200, true, "User Deleted", deletedUserRes)

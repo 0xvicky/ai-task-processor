@@ -15,7 +15,8 @@ func Init() {
 	//loading .env vars
 	envErr := godotenv.Load()
 	if envErr != nil {
-		log.Fatal(envErr)
+		fmt.Printf("Fault loading env:%v", envErr)
+		return
 	}
 
 	var (
