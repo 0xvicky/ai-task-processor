@@ -115,4 +115,24 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-//delete user
+// delete user
+func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	// var userId int `json:"userid"`
+	var req struct {
+		UserId int `json:"userid"`
+	}
+	decoder := json.NewDecoder(r.Body)
+	decodeErr := decoder.Decode(&req)
+	if decodeErr != nil {
+		utils.WriteJsonResponse(w, 400, false, decodeErr.Error(), nil)
+	}
+
+	deletedUserRes, deleteErr := service.DeleteUserService(req.UserId)
+	if deleteErr != nil {
+		utils.WriteJsonResponse(w, 500, false, deleteErr.Error(), nil)
+	}
+
+	utils.WriteJsonResponse(w, 200, true, "User Deleted", deletedUserRes)
+
+}

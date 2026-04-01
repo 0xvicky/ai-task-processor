@@ -21,6 +21,7 @@ func main() {
 	http.HandleFunc("/createuser", handler.CreateUserHandler) //post req
 	http.HandleFunc("/login", handler.LoginUserHandler)       //post req
 	http.HandleFunc("/update", handler.UpdateUserHandler)     //PATCH req
+	http.HandleFunc("/delete", handler.DeleteUserHandler)     //PATCH req
 
 	//Server
 	err := http.ListenAndServe(":6969", nil)

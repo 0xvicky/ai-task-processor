@@ -69,3 +69,17 @@ func UpdateUserRepo(userUpdateDetail model.UserUpdate, userId int) (model.User, 
 
 	return updatedUserRes, nil
 }
+
+func DeleteUserRepo(userId int) (model.User, error) {
+	var deletedUserRes model.User
+
+	deleteQuery := `DELETE from users where user_id=$1 RETURNING user_id, user_name, user_email, created_at;`
+
+	deletedUser := db.Db.QueryRow(deleteQuery, userId)
+	deleteScanErr := deletedUser.Scan(&deletedUserRes.UserId, &deletedUserRes.Name, &deletedUserRes.Email, &deletedUserRes.CreatedAt)
+	if deleteScanErr != nil {
+		return model.User{}, fmt.Errorf("Delete Scanner Failed:%w", deleteScanErr)
+	}
+
+	return deletedUserRes, nil
+}

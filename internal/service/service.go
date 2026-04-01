@@ -80,3 +80,16 @@ func UpdateService(userUpdateInfo model.UserUpdate, userId int) (model.User, err
 
 	return updatedUserRes, nil
 }
+
+func DeleteUserService(userId int) (model.User, error) {
+	if userId == 0 {
+		return model.User{}, fmt.Errorf("Invalid User Id")
+	}
+
+	deletedUserRes, deleteErr := repository.DeleteUserRepo(userId)
+	if deleteErr != nil {
+		return model.User{}, fmt.Errorf("Delete User Failed:%w", deleteErr)
+	}
+	return deletedUserRes, nil
+
+}
