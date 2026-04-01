@@ -62,6 +62,9 @@ func LoginService(userLoginInfo model.UserLogin) (string, error) {
 
 func UpdateService(userUpdateInfo model.UserUpdate, userId int) (model.User, error) {
 
+	if userId == 0 {
+		return model.User{}, fmt.Errorf("Invalid User Id")
+	}
 	if userUpdateInfo.Email == nil && userUpdateInfo.Name == nil {
 		return model.User{}, fmt.Errorf("Both fields are empty !")
 	}

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 // default route for "/"
@@ -74,13 +75,43 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 // update user info
 func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	var updateUserInfo model.User
+	var updateUserInfo model.UserUpdate
+	var userId int
+
+	var req struct {
+		UserId int `json:"userid"`
+		model.UserUpdate
+	}
+
 	decoder := json.NewDecoder(r.Body)
-	decodeErr := decoder.Decode(&updateUserInfo)
+	decodeErr := decoder.Decode(&req)
 	if decodeErr != nil {
 		utils.WriteJsonResponse(w, 500, false, "Update decode failed", nil)
 		return
 	}
+	userId = req.UserId
+	updateUserInfo = req.UserUpdate
+
+	userUpdateRes, updateErr := service.UpdateService(updateUserInfo, userId)
+
+	if updateErr != nil {
+		utils.WriteJsonResponse(w, 500, false, updateErr.Error(), nil)
+		return
+	}
+
+	updatePayload := struct {
+		UserId    int       `json:"user_id"`
+		Name      string    `json:"user_name"`
+		Email     string    `json:"user_email"`
+		CreatedAt time.Time `json:"created_at"`
+	}{
+		UserId:    userUpdateRes.UserId,
+		Name:      userUpdateRes.Name,
+		Email:     userUpdateRes.Email,
+		CreatedAt: userUpdateRes.CreatedAt,
+	}
+
+	utils.WriteJsonResponse(w, 200, true, "Update Success", updatePayload)
 
 }
 
