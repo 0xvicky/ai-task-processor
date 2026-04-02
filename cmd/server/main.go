@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ai-task-processor/internal/config"
 	"ai-task-processor/internal/db"
 	"ai-task-processor/internal/handler"
 	"log"
@@ -12,6 +13,7 @@ import (
 func main() {
 	println("AI-TASK-PROCESSOR")
 
+	config.EnvInit()
 	//Connect with DB
 	db.Init()
 	defer db.Db.Close()

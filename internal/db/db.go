@@ -5,19 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 var Db *sql.DB
 
 func Init() {
-	//loading .env vars
-	envErr := godotenv.Load()
-	if envErr != nil {
-		fmt.Printf("Fault loading env:%v", envErr)
-		return
-	}
 
 	var (
 		port              = os.Getenv("PORT")
