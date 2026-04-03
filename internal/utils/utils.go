@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"ai-task-processor/internal/constants"
 	"ai-task-processor/internal/model"
 	"encoding/json"
 	"fmt"
@@ -46,4 +47,14 @@ func JWTInit(userId int) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func ExtractUserId(r *http.Request) int {
+	userId, ok := r.Context().Value(constants.UserKey).(int)
+	fmt.Print(userId)
+	if !ok {
+
+		return 0
+	}
+	return userId
 }

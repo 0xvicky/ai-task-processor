@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"ai-task-processor/internal/constants"
 	"ai-task-processor/internal/model"
 	"ai-task-processor/internal/service"
 	"ai-task-processor/internal/utils"
@@ -66,12 +65,7 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userId, ok := r.Context().Value(constants.UserKey).(int)
-	fmt.Print(userId)
-	if !ok {
-		utils.WriteJsonResponse(w, 401, false, "Unauthorized1", nil)
-		return
-	}
+	userId := utils.ExtractUserId(r)
 	var updateUserInfo model.UserUpdate
 
 	decoder := json.NewDecoder(r.Body)
@@ -108,8 +102,7 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userId := r.Context().Value(constants.UserKey).(int)
-
+	userId := utils.ExtractUserId(r)
 	deletedUserRes, deleteErr := service.DeleteUserService(userId)
 	if deleteErr != nil {
 		utils.WriteJsonResponse(w, 500, false, deleteErr.Error(), nil)
