@@ -7,6 +7,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -58,12 +59,34 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		if token.Valid {
 			//move ahead logic
 			userId := claims.UserId
-			ctx := context.WithValue(r.Context(), constants.UserKey, userId)
+			userRole := claims.UserRole
+			ctx := r.Context()
+			ctx = context.WithValue(ctx, constants.UserKey, userId)
+			ctx = context.WithValue(ctx, constants.UserRole, userRole)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
-
 	})
 
 	//passing user_id forward
+
+}
+
+func RoleMiddleware(allowedRoles ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// allowedRoles := []string{"ADMIN", "MOD"}
+			userRole, ok := r.Context().Value(constants.UserRole).(string)
+			if !ok {
+				utils.WriteJsonResponse(w, 401, false, "Unauthorized", nil)
+				return
+			}
+			if !slices.Contains(allowedRoles, userRole) {
+				utils.WriteJsonResponse(w, 403, false, "Forbidden", nil)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 
 }

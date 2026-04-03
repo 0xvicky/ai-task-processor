@@ -37,13 +37,14 @@ func CreateUserService(newUser model.User) (model.JwtAuthRes, error) {
 		return model.JwtAuthRes{}, fmt.Errorf("internal db error")
 	}
 
-	token, jwtErr := utils.JWTInit(userId)
+	token, jwtErr := utils.JWTInit(userId, newUser.Role)
 
 	if jwtErr != nil {
 		return model.JwtAuthRes{}, fmt.Errorf("Error while generating jwt:%w", jwtErr)
 	}
 	newUserRes := model.JwtAuthRes{
 		UserId:   userId,
+		UserRole: newUser.Role,
 		JwtToken: token,
 	}
 
@@ -67,16 +68,17 @@ func LoginService(userLoginInfo model.UserLogin) (model.JwtAuthRes, error) {
 		// w.WriteHeader(http.StatusBadRequest)
 	}
 
-	token, jwtErr := utils.JWTInit(userInfo.UserId)
+	token, jwtErr := utils.JWTInit(userInfo.UserId, userInfo.Role)
 
 	if jwtErr != nil {
 		return model.JwtAuthRes{}, fmt.Errorf("Error while generating jwt:%w", jwtErr)
 	}
 
-	fmt.Print(userInfo.UserId)
+	// fmt.Print(userInfo.UserId)
 
 	jwtRes := model.JwtAuthRes{
 		UserId:   userInfo.UserId,
+		UserRole: userInfo.Role,
 		JwtToken: token,
 	}
 
@@ -137,4 +139,13 @@ func MeService(userId int) (model.User, error) {
 
 	return userRes, nil
 
+}
+
+func FetchAllUsersService() ([]model.User, error) {
+	users, usersErr := repository.FetchAllUsersRepo()
+	if usersErr != nil {
+		return nil, fmt.Errorf("fetch all users failed")
+	}
+
+	return users, nil
 }

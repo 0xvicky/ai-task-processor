@@ -126,3 +126,15 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJsonResponse(w, 200, true, "User Fetch Success", userRes)
 
 }
+
+func FetchAllUsersHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	users, usersErr := service.FetchAllUsersService()
+	if usersErr != nil {
+		utils.WriteJsonResponse(w, 500, false, "users fetch failed", nil)
+		return
+	}
+
+	utils.WriteJsonResponse(w, 200, true, "users fetch success", users)
+}

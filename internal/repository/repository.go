@@ -12,9 +12,9 @@ import (
 func CreateUserRepo(userDetail model.User) (int, error) {
 	// println("in repo")
 	// fmt.Printf("%+v", userDetail)
-	createUserQuery := `INSERT INTO users(user_name, user_email, user_password) VALUES($1,$2,$3) RETURNING user_id;`
+	createUserQuery := `INSERT INTO users(user_name, user_email, user_password, user_role) VALUES($1,$2,$3, $4) RETURNING user_id;`
 
-	row := db.Db.QueryRow(createUserQuery, userDetail.Name, userDetail.Email, userDetail.Password)
+	row := db.Db.QueryRow(createUserQuery, userDetail.Name, userDetail.Email, userDetail.Password, userDetail.Role)
 
 	var newUserId int
 	scanErr := row.Scan(&newUserId)
@@ -28,9 +28,9 @@ func CreateUserRepo(userDetail model.User) (int, error) {
 func GetUserByEmail(email string) (model.User, error) {
 	// println(email)
 	var user model.User
-	fetchUserQuery := `SELECT user_id, user_name,user_email, user_password, created_at FROM users WHERE user_email = $1;`
+	fetchUserQuery := `SELECT user_id, user_name,user_email, user_password,user_role, created_at FROM users WHERE user_email = $1;`
 	userInfo := db.Db.QueryRow(fetchUserQuery, email)
-	scanErr := userInfo.Scan(&user.UserId, &user.Name, &user.Email, &user.Password, &user.CreatedAt)
+	scanErr := userInfo.Scan(&user.UserId, &user.Name, &user.Email, &user.Password, &user.Role, &user.CreatedAt)
 	if scanErr != nil {
 		return model.User{}, fmt.Errorf("fetch user failed:%w", scanErr)
 	}
@@ -98,4 +98,33 @@ func MeRepo(userId int) (model.User, error) {
 
 	return userRes, nil
 
+}
+
+func FetchAllUsersRepo() ([]model.User, error) {
+
+	//initialise an array of type model.User
+	var users []model.User
+
+	//postgres query to fetch the whole data
+	allUsersQuery := `SELECT user_id, user_name, user_email, created_at from users;`
+	userRows, allUserErr := db.Db.Query(allUsersQuery)
+	if allUserErr != nil {
+		return nil, fmt.Errorf("Fetch all users error")
+	}
+	defer userRows.Close()
+	//iterate over the rows and append each user one by one in users array
+	for userRows.Next() {
+		var user model.User
+		scanErr := userRows.Scan(&user.UserId, &user.Name, &user.Email, &user.CreatedAt)
+		if scanErr != nil {
+			return nil, fmt.Errorf("all users scan failed %w", scanErr)
+		}
+		users = append(users, user)
+	}
+
+	if rowsErr := userRows.Err(); rowsErr != nil {
+		return nil, fmt.Errorf("rows iteration error %w", rowsErr)
+	}
+	//return the users array
+	return users, nil
 }

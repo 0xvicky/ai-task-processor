@@ -11,6 +11,7 @@ type User struct {
 	Name      string `json:"name"`
 	Email     string `json:"email"`
 	Password  string `json:"password,omitempty"`
+	Role      string `json:"role,omitempty"`
 	CreatedAt time.Time
 }
 
@@ -32,10 +33,12 @@ type UserUpdate struct {
 
 type JwtAuthRes struct {
 	UserId   int
+	UserRole string
 	JwtToken string
 }
 
 type JwtClaims struct {
-	UserId int `json:"userId"`
+	UserId   int    `json:"userId"`
+	UserRole string `json:"userRole"`
 	jwt.RegisteredClaims
 }
