@@ -4,6 +4,7 @@ import (
 	"ai-task-processor/internal/config"
 	"ai-task-processor/internal/db"
 	"ai-task-processor/internal/handler"
+	"ai-task-processor/internal/middleware"
 	"log"
 	"net/http"
 
@@ -21,9 +22,9 @@ func main() {
 	http.HandleFunc("/", handler.RootHandler)
 	http.HandleFunc("/health", handler.Health)
 	http.HandleFunc("/createuser", handler.CreateUserHandler) //post req
-	http.HandleFunc("/login", handler.LoginUserHandler)       //post req
-	http.HandleFunc("/update", handler.UpdateUserHandler)     //PATCH req
-	http.HandleFunc("/delete", handler.DeleteUserHandler)     //DELETE req
+	http.HandleFunc("/login", handler.LoginUserHandler)
+	http.Handle("/update", middleware.AuthMiddleware(http.HandlerFunc(handler.UpdateUserHandler))) //PATCH req
+	http.Handle("/delete", middleware.AuthMiddleware(http.HandlerFunc(handler.DeleteUserHandler))) //DELETE req
 
 	//Server
 	err := http.ListenAndServe(":6969", nil)

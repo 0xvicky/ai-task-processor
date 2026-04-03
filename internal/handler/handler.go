@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"ai-task-processor/internal/constants"
 	"ai-task-processor/internal/model"
 	"ai-task-processor/internal/service"
 	"ai-task-processor/internal/utils"
@@ -64,22 +65,21 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 // update user info
 func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	var updateUserInfo model.UserUpdate
-	var userId int
 
-	var req struct {
-		UserId int `json:"userid"`
-		model.UserUpdate
+	userId, ok := r.Context().Value(constants.UserKey).(int)
+	fmt.Print(userId)
+	if !ok {
+		utils.WriteJsonResponse(w, 401, false, "Unauthorized1", nil)
+		return
 	}
+	var updateUserInfo model.UserUpdate
 
 	decoder := json.NewDecoder(r.Body)
-	decodeErr := decoder.Decode(&req)
+	decodeErr := decoder.Decode(&updateUserInfo)
 	if decodeErr != nil {
 		utils.WriteJsonResponse(w, 500, false, "Update decode failed", nil)
 		return
 	}
-	userId = req.UserId
-	updateUserInfo = req.UserUpdate
 
 	userUpdateRes, updateErr := service.UpdateService(updateUserInfo, userId)
 
@@ -107,18 +107,10 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 // delete user
 func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	// var userId int `json:"userid"`
-	var req struct {
-		UserId int `json:"userid"`
-	}
-	decoder := json.NewDecoder(r.Body)
-	decodeErr := decoder.Decode(&req)
-	if decodeErr != nil {
-		utils.WriteJsonResponse(w, 400, false, decodeErr.Error(), nil)
-		return
-	}
 
-	deletedUserRes, deleteErr := service.DeleteUserService(req.UserId)
+	userId := r.Context().Value(constants.UserKey).(int)
+
+	deletedUserRes, deleteErr := service.DeleteUserService(userId)
 	if deleteErr != nil {
 		utils.WriteJsonResponse(w, 500, false, deleteErr.Error(), nil)
 		return

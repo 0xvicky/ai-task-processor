@@ -73,6 +73,8 @@ func LoginService(userLoginInfo model.UserLogin) (model.JwtAuthRes, error) {
 		return model.JwtAuthRes{}, fmt.Errorf("Error while generating jwt:%w", jwtErr)
 	}
 
+	fmt.Print(userInfo.UserId)
+
 	jwtRes := model.JwtAuthRes{
 		UserId:   userInfo.UserId,
 		JwtToken: token,

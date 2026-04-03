@@ -36,6 +36,6 @@ type JwtAuthRes struct {
 }
 
 type JwtClaims struct {
-	UserId int `json:"user_id"`
+	UserId int `json:"userId"`
 	jwt.RegisteredClaims
 }
