@@ -230,10 +230,13 @@ This project intentionally avoids:
 
 ## 🔗 Getting Started
 
+```bash
 git clone <your-repo>
 cd ai-task-processor
 go run cmd/server/main.go
+```
 
+---
 
 ## 📌 Final Note
 
