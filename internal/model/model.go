@@ -7,10 +7,10 @@ import (
 )
 
 type User struct {
-	UserId    int
+	UserId    int    `json:"userId,omitempty"`
 	Name      string `json:"name"`
 	Email     string `json:"email"`
-	Password  string `json:"password"`
+	Password  string `json:"password,omitempty"`
 	CreatedAt time.Time
 }
 

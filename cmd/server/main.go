@@ -25,6 +25,7 @@ func main() {
 	http.HandleFunc("/login", handler.LoginUserHandler)
 	http.Handle("/update", middleware.AuthMiddleware(http.HandlerFunc(handler.UpdateUserHandler))) //PATCH req
 	http.Handle("/delete", middleware.AuthMiddleware(http.HandlerFunc(handler.DeleteUserHandler))) //DELETE req
+	http.Handle("/me", middleware.AuthMiddleware(http.HandlerFunc(handler.MeHandler)))
 
 	//Server
 	err := http.ListenAndServe(":6969", nil)

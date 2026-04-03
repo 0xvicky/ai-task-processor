@@ -120,3 +120,21 @@ func DeleteUserService(userId int) (model.User, error) {
 	return deletedUserRes, nil
 
 }
+
+func MeService(userId int) (model.User, error) {
+	if userId == 0 {
+		return model.User{}, fmt.Errorf("Invalid User")
+	}
+
+	userRes, userErr := repository.MeRepo(userId)
+	if errors.Is(userErr, sql.ErrNoRows) {
+		return model.User{}, fmt.Errorf("User not found")
+	}
+	if userErr != nil {
+		fmt.Print(userErr)
+		return model.User{}, fmt.Errorf("Invalid User")
+	}
+
+	return userRes, nil
+
+}

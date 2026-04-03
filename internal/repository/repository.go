@@ -83,3 +83,19 @@ func DeleteUserRepo(userId int) (model.User, error) {
 
 	return deletedUserRes, nil
 }
+
+func MeRepo(userId int) (model.User, error) {
+	var userRes model.User
+
+	userFetchQuery := `SELECT user_id, user_name, user_email, created_at from users where user_id=$1;`
+
+	userInfo := db.Db.QueryRow(userFetchQuery, userId)
+	userScanErr := userInfo.Scan(&userRes.UserId, &userRes.Name, &userRes.Email, &userRes.CreatedAt)
+
+	if userScanErr != nil {
+		return model.User{}, fmt.Errorf("User Fetch scanner failed%w", userScanErr)
+	}
+
+	return userRes, nil
+
+}

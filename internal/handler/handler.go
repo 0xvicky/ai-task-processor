@@ -110,5 +110,19 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJsonResponse(w, 200, true, "User Deleted", deletedUserRes)
+}
+
+func MeHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	userId := utils.ExtractUserId(r)
+
+	userRes, userErr := service.MeService(userId)
+	if userErr != nil {
+		fmt.Print(userErr)
+		utils.WriteJsonResponse(w, 500, false, "User Fetch Failed:", nil)
+		return
+	}
+
+	utils.WriteJsonResponse(w, 200, true, "User Fetch Success", userRes)
 
 }
