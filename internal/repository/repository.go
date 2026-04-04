@@ -35,6 +35,12 @@ func GetUserByEmail(email string) (model.User, error) {
 	userInfo := db.Db.QueryRow(fetchUserQuery, email)
 	scanErr := userInfo.Scan(&user.UserId, &user.Name, &user.Email, &user.Password, &user.Role, &user.CreatedAt)
 	if scanErr != nil {
+		if errors.Is(scanErr, context.DeadlineExceeded) {
+			return model.User{}, context.DeadlineExceeded
+		}
+		if errors.Is(scanErr, context.Canceled) || strings.Contains(scanErr.Error(), "canceling statement") {
+			return model.User{}, context.Canceled
+		}
 		return model.User{}, fmt.Errorf("fetch user failed:%w", scanErr)
 	}
 	return user, nil
@@ -135,18 +141,24 @@ func FetchAllUsersRepo(ctx context.Context) ([]model.User, error) {
 	allUsersQuery := `SELECT user_id, user_name, user_email, created_at from users;`
 	userRows, allUserErr := db.Db.QueryContext(ctx, allUsersQuery)
 
-	if errors.Is(allUserErr, context.DeadlineExceeded) {
-		return nil, context.DeadlineExceeded
-	}
-	if errors.Is(allUserErr, context.Canceled) || strings.Contains(allUserErr.Error(), "canceling statement") {
-		return nil, allUserErr
-	}
 	if allUserErr != nil {
+		if errors.Is(allUserErr, context.DeadlineExceeded) {
+			return nil, context.DeadlineExceeded
+		}
+		if errors.Is(allUserErr, context.Canceled) || strings.Contains(allUserErr.Error(), "canceling statement") {
+			return nil, context.Canceled
+		}
 		return nil, fmt.Errorf("Fetch all users error")
 	}
+
 	defer userRows.Close()
 	//iterate over the rows and append each user one by one in users array
 	for userRows.Next() {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
 		var user model.User
 		scanErr := userRows.Scan(&user.UserId, &user.Name, &user.Email, &user.CreatedAt)
 		if scanErr != nil {

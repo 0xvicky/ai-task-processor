@@ -55,6 +55,14 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	loginPayload, loginErr := service.LoginService(userLoginInfo)
 	if loginErr != nil {
+		if errors.Is(loginErr, context.DeadlineExceeded) {
+			utils.WriteJsonResponse(w, 504, false, loginErr.Error(), nil)
+			return
+		}
+		if errors.Is(loginErr, context.Canceled) {
+			utils.WriteJsonResponse(w, 500, false, loginErr.Error(), nil)
+			return
+		}
 		utils.WriteJsonResponse(w, 401, false, loginErr.Error(), nil)
 		return
 	}
@@ -82,6 +90,14 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	userUpdateRes, updateErr := service.UpdateService(ctx, userId, updateUserInfo)
 
 	if updateErr != nil {
+		if errors.Is(updateErr, context.DeadlineExceeded) {
+			utils.WriteJsonResponse(w, 504, false, "Context Timeout", nil)
+			return
+		}
+		if errors.Is(updateErr, context.Canceled) {
+			utils.WriteJsonResponse(w, 409, false, "Request cancelled", nil)
+			return
+		}
 		utils.WriteJsonResponse(w, 500, false, updateErr.Error(), nil)
 		return
 	}
@@ -112,6 +128,14 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	userId := utils.ExtractUserId(r)
 	deletedUserRes, deleteErr := service.DeleteUserService(ctx, userId)
 	if deleteErr != nil {
+		if errors.Is(deleteErr, context.DeadlineExceeded) {
+			utils.WriteJsonResponse(w, 504, false, "Context Timeout", nil)
+			return
+		}
+		if errors.Is(deleteErr, context.Canceled) {
+			utils.WriteJsonResponse(w, 409, false, "Request cancelled", nil)
+			return
+		}
 		utils.WriteJsonResponse(w, 500, false, deleteErr.Error(), nil)
 		return
 	}
@@ -129,14 +153,16 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 
 	userRes, userErr := service.MeService(ctx, userId)
 
-	if errors.Is(userErr, context.DeadlineExceeded) {
-		utils.WriteJsonResponse(w, 409, false, "Context Timeout", nil)
-		return
-	}
-
 	if userErr != nil {
-		fmt.Print(userErr)
-		utils.WriteJsonResponse(w, 500, false, "User Fetch Failed", nil)
+		if errors.Is(userErr, context.DeadlineExceeded) {
+			utils.WriteJsonResponse(w, 504, false, "Context Timeout", nil)
+			return
+		}
+		if errors.Is(userErr, context.Canceled) {
+			utils.WriteJsonResponse(w, 409, false, "Request cancelled", nil)
+			return
+		}
+		utils.WriteJsonResponse(w, 500, false, userErr.Error(), nil)
 		return
 	}
 
@@ -151,8 +177,17 @@ func FetchAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	users, usersErr := service.FetchAllUsersService(ctx)
+
 	if usersErr != nil {
-		utils.WriteJsonResponse(w, 500, false, "users fetch failed", nil)
+		if errors.Is(usersErr, context.DeadlineExceeded) {
+			utils.WriteJsonResponse(w, 504, false, "Context Timeout", nil)
+			return
+		}
+		if errors.Is(usersErr, context.Canceled) {
+			utils.WriteJsonResponse(w, 409, false, "Request cancelled", nil)
+			return
+		}
+		utils.WriteJsonResponse(w, 500, false, usersErr.Error(), nil)
 		return
 	}
 

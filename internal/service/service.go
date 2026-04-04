@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -55,10 +56,17 @@ func CreateUserService(newUser model.User) (model.JwtAuthRes, error) {
 func LoginService(userLoginInfo model.UserLogin) (model.JwtAuthRes, error) {
 	//check if user exist or not, if exist fetch the user details
 	userInfo, fetchErr := repository.GetUserByEmail(userLoginInfo.Email)
-	if errors.Is(fetchErr, sql.ErrNoRows) {
-		return model.JwtAuthRes{}, fmt.Errorf("invalid credentials")
-	}
 	if fetchErr != nil {
+
+		if errors.Is(fetchErr, sql.ErrNoRows) {
+			return model.JwtAuthRes{}, sql.ErrNoRows
+		}
+		if errors.Is(fetchErr, context.DeadlineExceeded) {
+			return model.JwtAuthRes{}, context.DeadlineExceeded
+		}
+		if errors.Is(fetchErr, context.Canceled) || strings.Contains(fetchErr.Error(), "canceling statement") {
+			return model.JwtAuthRes{}, context.Canceled
+		}
 		return model.JwtAuthRes{}, fmt.Errorf("fetch user failed:%w", fetchErr)
 	}
 	// //if exist, then hash the password and compare with stored hash pass
