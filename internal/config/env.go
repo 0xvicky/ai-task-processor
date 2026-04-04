@@ -11,7 +11,7 @@ func EnvInit() {
 	//loading .env vars
 	envErr := godotenv.Load()
 	if envErr != nil {
-		fmt.Errorf("Fault loading env:%v", envErr)
+		fmt.Errorf("Fault loading env:%w", envErr)
 		return
 	}
 

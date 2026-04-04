@@ -4,6 +4,7 @@ import (
 	"ai-task-processor/internal/model"
 	"ai-task-processor/internal/repository"
 	"ai-task-processor/internal/utils"
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -86,7 +87,7 @@ func LoginService(userLoginInfo model.UserLogin) (model.JwtAuthRes, error) {
 
 }
 
-func UpdateService(userUpdateInfo model.UserUpdate, userId int) (model.User, error) {
+func UpdateService(ctx context.Context, userId int, userUpdateInfo model.UserUpdate) (model.User, error) {
 
 	if userId == 0 {
 		return model.User{}, fmt.Errorf("Invalid User Id")
@@ -95,7 +96,7 @@ func UpdateService(userUpdateInfo model.UserUpdate, userId int) (model.User, err
 		return model.User{}, fmt.Errorf("Both fields are empty !")
 	}
 
-	updatedUserRes, updateErr := repository.UpdateUserRepo(userUpdateInfo, userId)
+	updatedUserRes, updateErr := repository.UpdateUserRepo(ctx, userId, userUpdateInfo)
 
 	if errors.Is(updateErr, sql.ErrNoRows) {
 		return model.User{}, fmt.Errorf("No user found:%w", updateErr)
@@ -107,44 +108,48 @@ func UpdateService(userUpdateInfo model.UserUpdate, userId int) (model.User, err
 	return updatedUserRes, nil
 }
 
-func DeleteUserService(userId int) (model.User, error) {
+func DeleteUserService(ctx context.Context, userId int) (model.User, error) {
 	if userId == 0 {
 		return model.User{}, fmt.Errorf("Invalid User Id")
 	}
 
-	deletedUserRes, deleteErr := repository.DeleteUserRepo(userId)
+	deletedUserRes, deleteErr := repository.DeleteUserRepo(ctx, userId)
 	if errors.Is(deleteErr, sql.ErrNoRows) {
 		return model.User{UserId: userId}, nil
 	}
 	if deleteErr != nil {
-		return model.User{}, fmt.Errorf("Delete User Failed:%w", deleteErr)
+		return model.User{}, deleteErr
 	}
 	return deletedUserRes, nil
 
 }
 
-func MeService(userId int) (model.User, error) {
+func MeService(ctx context.Context, userId int) (model.User, error) {
 	if userId == 0 {
 		return model.User{}, fmt.Errorf("Invalid User")
 	}
 
-	userRes, userErr := repository.MeRepo(userId)
+	userRes, userErr := repository.MeRepo(ctx, userId)
+
+	if errors.Is(userErr, context.DeadlineExceeded) {
+		return model.User{}, userErr
+	}
 	if errors.Is(userErr, sql.ErrNoRows) {
-		return model.User{}, fmt.Errorf("User not found")
+		return model.User{}, sql.ErrNoRows
 	}
 	if userErr != nil {
-		fmt.Print(userErr)
-		return model.User{}, fmt.Errorf("Invalid User")
+		// fmt.Print(userErr)
+		return model.User{}, userErr
 	}
 
 	return userRes, nil
 
 }
 
-func FetchAllUsersService() ([]model.User, error) {
-	users, usersErr := repository.FetchAllUsersRepo()
+func FetchAllUsersService(ctx context.Context) ([]model.User, error) {
+	users, usersErr := repository.FetchAllUsersRepo(ctx)
 	if usersErr != nil {
-		return nil, fmt.Errorf("fetch all users failed")
+		return nil, usersErr
 	}
 
 	return users, nil

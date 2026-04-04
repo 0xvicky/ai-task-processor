@@ -4,7 +4,9 @@ import (
 	"ai-task-processor/internal/model"
 	"ai-task-processor/internal/service"
 	"ai-task-processor/internal/utils"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -65,6 +67,8 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
 	userId := utils.ExtractUserId(r)
 	var updateUserInfo model.UserUpdate
 
@@ -75,7 +79,7 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userUpdateRes, updateErr := service.UpdateService(updateUserInfo, userId)
+	userUpdateRes, updateErr := service.UpdateService(ctx, userId, updateUserInfo)
 
 	if updateErr != nil {
 		utils.WriteJsonResponse(w, 500, false, updateErr.Error(), nil)
@@ -102,8 +106,11 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
 	userId := utils.ExtractUserId(r)
-	deletedUserRes, deleteErr := service.DeleteUserService(userId)
+	deletedUserRes, deleteErr := service.DeleteUserService(ctx, userId)
 	if deleteErr != nil {
 		utils.WriteJsonResponse(w, 500, false, deleteErr.Error(), nil)
 		return
@@ -114,12 +121,22 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 
 func MeHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel() //clean the messup, resources, called when function returns
+
 	userId := utils.ExtractUserId(r)
 
-	userRes, userErr := service.MeService(userId)
+	userRes, userErr := service.MeService(ctx, userId)
+
+	if errors.Is(userErr, context.DeadlineExceeded) {
+		utils.WriteJsonResponse(w, 409, false, "Context Timeout", nil)
+		return
+	}
+
 	if userErr != nil {
 		fmt.Print(userErr)
-		utils.WriteJsonResponse(w, 500, false, "User Fetch Failed:", nil)
+		utils.WriteJsonResponse(w, 500, false, "User Fetch Failed", nil)
 		return
 	}
 
@@ -130,7 +147,10 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 func FetchAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	users, usersErr := service.FetchAllUsersService()
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
+	users, usersErr := service.FetchAllUsersService(ctx)
 	if usersErr != nil {
 		utils.WriteJsonResponse(w, 500, false, "users fetch failed", nil)
 		return

@@ -3,6 +3,9 @@ package repository
 import (
 	"ai-task-processor/internal/db"
 	"ai-task-processor/internal/model"
+	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -37,7 +40,7 @@ func GetUserByEmail(email string) (model.User, error) {
 	return user, nil
 }
 
-func UpdateUserRepo(userUpdateDetail model.UserUpdate, userId int) (model.User, error) {
+func UpdateUserRepo(ctx context.Context, userId int, userUpdateDetail model.UserUpdate) (model.User, error) {
 	var updatedUserRes model.User
 	updateQuery := `UPDATE users SET `
 	args := []any{}
@@ -64,50 +67,80 @@ func UpdateUserRepo(userUpdateDetail model.UserUpdate, userId int) (model.User, 
 	updateScanErr := updatedUser.Scan(&updatedUserRes.UserId, &updatedUserRes.Name, &updatedUserRes.Email, &updatedUserRes.CreatedAt)
 
 	if updateScanErr != nil {
+		if errors.Is(updateScanErr, context.DeadlineExceeded) {
+			return model.User{}, context.DeadlineExceeded
+		}
+		if errors.Is(updateScanErr, context.Canceled) || strings.Contains(updateScanErr.Error(), "canceling statements") {
+			return model.User{}, context.Canceled
+		}
 		return model.User{}, fmt.Errorf("Update Scanner failed ! %w", updateScanErr)
 	}
 
 	return updatedUserRes, nil
 }
 
-func DeleteUserRepo(userId int) (model.User, error) {
+func DeleteUserRepo(ctx context.Context, userId int) (model.User, error) {
 	var deletedUserRes model.User
 
 	deleteQuery := `DELETE from users where user_id=$1 RETURNING user_id, user_name, user_email, created_at;`
 
-	deletedUser := db.Db.QueryRow(deleteQuery, userId)
+	deletedUser := db.Db.QueryRowContext(ctx, deleteQuery, userId)
 	deleteScanErr := deletedUser.Scan(&deletedUserRes.UserId, &deletedUserRes.Name, &deletedUserRes.Email, &deletedUserRes.CreatedAt)
 	if deleteScanErr != nil {
-		return model.User{}, fmt.Errorf("Delete Scanner Failed:%w", deleteScanErr)
+		if errors.Is(deleteScanErr, context.DeadlineExceeded) {
+			return model.User{}, context.DeadlineExceeded
+		}
+		if errors.Is(deleteScanErr, context.Canceled) || strings.Contains(deleteScanErr.Error(), "canceling statement") {
+			return model.User{}, context.Canceled
+		}
+		return model.User{}, deleteScanErr
 	}
 
 	return deletedUserRes, nil
 }
 
-func MeRepo(userId int) (model.User, error) {
+func MeRepo(ctx context.Context, userId int) (model.User, error) {
 	var userRes model.User
 
-	userFetchQuery := `SELECT user_id, user_name, user_email, created_at from users where user_id=$1;`
+	userFetchQuery := `SELECT user_id, user_name, user_email, created_atfrom users where user_id=$1;`
+	// userFetchQuery := `SELECT pg_sleep(6)`
 
-	userInfo := db.Db.QueryRow(userFetchQuery, userId)
+	userInfo := db.Db.QueryRowContext(ctx, userFetchQuery, userId)
 	userScanErr := userInfo.Scan(&userRes.UserId, &userRes.Name, &userRes.Email, &userRes.CreatedAt)
 
+	if errors.Is(userScanErr, context.DeadlineExceeded) {
+		return model.User{}, context.DeadlineExceeded
+	}
+	if errors.Is(userScanErr, context.Canceled) || strings.Contains(userScanErr.Error(), "canceling statement") {
+		return model.User{}, context.Canceled
+	}
+
+	if errors.Is(userScanErr, sql.ErrNoRows) {
+		return model.User{}, fmt.Errorf("User not found: %w", sql.ErrNoRows)
+	}
+
 	if userScanErr != nil {
-		return model.User{}, fmt.Errorf("User Fetch scanner failed%w", userScanErr)
+		return model.User{}, fmt.Errorf("User Fetch scanner failed %w", userScanErr)
 	}
 
 	return userRes, nil
-
 }
 
-func FetchAllUsersRepo() ([]model.User, error) {
+func FetchAllUsersRepo(ctx context.Context) ([]model.User, error) {
 
 	//initialise an array of type model.User
 	var users []model.User
 
 	//postgres query to fetch the whole data
 	allUsersQuery := `SELECT user_id, user_name, user_email, created_at from users;`
-	userRows, allUserErr := db.Db.Query(allUsersQuery)
+	userRows, allUserErr := db.Db.QueryContext(ctx, allUsersQuery)
+
+	if errors.Is(allUserErr, context.DeadlineExceeded) {
+		return nil, context.DeadlineExceeded
+	}
+	if errors.Is(allUserErr, context.Canceled) || strings.Contains(allUserErr.Error(), "canceling statement") {
+		return nil, allUserErr
+	}
 	if allUserErr != nil {
 		return nil, fmt.Errorf("Fetch all users error")
 	}
