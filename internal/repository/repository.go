@@ -108,24 +108,24 @@ func DeleteUserRepo(ctx context.Context, userId int) (model.User, error) {
 func MeRepo(ctx context.Context, userId int) (model.User, error) {
 	var userRes model.User
 
-	userFetchQuery := `SELECT user_id, user_name, user_email, created_atfrom users where user_id=$1;`
+	userFetchQuery := `SELECT user_id, user_name, user_email, created_at from users where user_id=$1;`
 	// userFetchQuery := `SELECT pg_sleep(6)`
 
 	userInfo := db.Db.QueryRowContext(ctx, userFetchQuery, userId)
 	userScanErr := userInfo.Scan(&userRes.UserId, &userRes.Name, &userRes.Email, &userRes.CreatedAt)
 
-	if errors.Is(userScanErr, context.DeadlineExceeded) {
-		return model.User{}, context.DeadlineExceeded
-	}
-	if errors.Is(userScanErr, context.Canceled) || strings.Contains(userScanErr.Error(), "canceling statement") {
-		return model.User{}, context.Canceled
-	}
-
-	if errors.Is(userScanErr, sql.ErrNoRows) {
-		return model.User{}, fmt.Errorf("User not found: %w", sql.ErrNoRows)
-	}
-
 	if userScanErr != nil {
+		if errors.Is(userScanErr, context.DeadlineExceeded) {
+			return model.User{}, context.DeadlineExceeded
+		}
+		if errors.Is(userScanErr, context.Canceled) || strings.Contains(userScanErr.Error(), "canceling statement") {
+			return model.User{}, context.Canceled
+		}
+
+		if errors.Is(userScanErr, sql.ErrNoRows) {
+			return model.User{}, fmt.Errorf("User not found: %w", sql.ErrNoRows)
+		}
+
 		return model.User{}, fmt.Errorf("User Fetch scanner failed %w", userScanErr)
 	}
 

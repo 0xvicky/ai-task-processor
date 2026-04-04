@@ -106,10 +106,10 @@ func UpdateService(ctx context.Context, userId int, userUpdateInfo model.UserUpd
 
 	updatedUserRes, updateErr := repository.UpdateUserRepo(ctx, userId, userUpdateInfo)
 
-	if errors.Is(updateErr, sql.ErrNoRows) {
-		return model.User{}, fmt.Errorf("No user found:%w", updateErr)
-	}
 	if updateErr != nil {
+		if errors.Is(updateErr, sql.ErrNoRows) {
+			return model.User{}, fmt.Errorf("No user found:%w", updateErr)
+		}
 		return model.User{}, fmt.Errorf("Update user failed:%w", updateErr)
 	}
 
@@ -122,10 +122,10 @@ func DeleteUserService(ctx context.Context, userId int) (model.User, error) {
 	}
 
 	deletedUserRes, deleteErr := repository.DeleteUserRepo(ctx, userId)
-	if errors.Is(deleteErr, sql.ErrNoRows) {
-		return model.User{UserId: userId}, nil
-	}
 	if deleteErr != nil {
+		if errors.Is(deleteErr, sql.ErrNoRows) {
+			return model.User{UserId: userId}, nil
+		}
 		return model.User{}, deleteErr
 	}
 	return deletedUserRes, nil
@@ -139,13 +139,13 @@ func MeService(ctx context.Context, userId int) (model.User, error) {
 
 	userRes, userErr := repository.MeRepo(ctx, userId)
 
-	if errors.Is(userErr, context.DeadlineExceeded) {
-		return model.User{}, userErr
-	}
-	if errors.Is(userErr, sql.ErrNoRows) {
-		return model.User{}, sql.ErrNoRows
-	}
 	if userErr != nil {
+		if errors.Is(userErr, context.DeadlineExceeded) {
+			return model.User{}, userErr
+		}
+		if errors.Is(userErr, sql.ErrNoRows) {
+			return model.User{}, sql.ErrNoRows
+		}
 		// fmt.Print(userErr)
 		return model.User{}, userErr
 	}

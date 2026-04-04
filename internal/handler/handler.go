@@ -146,7 +146,7 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 func MeHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel() //clean the messup, resources, called when function returns
 
 	userId := utils.ExtractUserId(r)
