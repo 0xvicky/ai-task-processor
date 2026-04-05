@@ -12,7 +12,7 @@ import (
 
 // var db.Db *sql.DB = db.Db
 
-func CreateUserRepo(userDetail model.User) (int, error) {
+func CreateUserRepo(ctx context.Context, userDetail model.User) (int, error) {
 	// println("in repo")
 	// fmt.Printf("%+v", userDetail)
 	createUserQuery := `INSERT INTO users(user_name, user_email, user_password, user_role) VALUES($1,$2,$3, $4) RETURNING user_id;`
@@ -22,13 +22,19 @@ func CreateUserRepo(userDetail model.User) (int, error) {
 	var newUserId int
 	scanErr := row.Scan(&newUserId)
 	if scanErr != nil {
+		if errors.Is(scanErr, context.DeadlineExceeded) {
+			return 0, context.DeadlineExceeded
+		}
+		if errors.Is(scanErr, context.Canceled) || strings.Contains(scanErr.Error(), "canceling statement") {
+			return 0, context.Canceled
+		}
 		return 0, fmt.Errorf("internal db error: %w", scanErr)
 	}
 	return newUserId, nil
 }
 
 // get user info using email
-func GetUserByEmail(email string) (model.User, error) {
+func GetUserByEmail(ctx context.Context, email string) (model.User, error) {
 	// println(email)
 	var user model.User
 	fetchUserQuery := `SELECT user_id, user_name,user_email, user_password,user_role, created_at FROM users WHERE user_email = $1;`

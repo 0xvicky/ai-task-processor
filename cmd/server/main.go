@@ -5,6 +5,7 @@ import (
 	"ai-task-processor/internal/db"
 	"ai-task-processor/internal/handler"
 	"ai-task-processor/internal/middleware"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -14,7 +15,11 @@ import (
 func main() {
 	println("AI-TASK-PROCESSOR")
 
-	config.EnvInit()
+	envErr := config.EnvInit()
+	if envErr != nil {
+		fmt.Println("Env load error")
+		return
+	}
 	//Connect with DB
 	db.Init()
 	defer db.Db.Close()

@@ -23,6 +23,9 @@ func Health(w http.ResponseWriter, r *http.Request) {
 
 func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
 	var newUser model.User
 	// println(r.Body)
 	decoder := json.NewDecoder(r.Body)
@@ -34,8 +37,16 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIdPayload, userCreateErr := service.CreateUserService(newUser)
+	userIdPayload, userCreateErr := service.CreateUserService(ctx, newUser)
 	if userCreateErr != nil {
+		if errors.Is(userCreateErr, context.DeadlineExceeded) {
+			utils.WriteJsonResponse(w, 504, false, userCreateErr.Error(), nil)
+			return
+		}
+		if errors.Is(userCreateErr, context.Canceled) {
+			utils.WriteJsonResponse(w, 500, false, userCreateErr.Error(), nil)
+			return
+		}
 		utils.WriteJsonResponse(w, 500, false, userCreateErr.Error(), nil)
 		return
 	}
@@ -45,6 +56,10 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
 	var userLoginInfo model.UserLogin
 	decoder := json.NewDecoder(r.Body)
 	decodeErr := decoder.Decode(&userLoginInfo)
@@ -53,7 +68,7 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginPayload, loginErr := service.LoginService(userLoginInfo)
+	loginPayload, loginErr := service.LoginService(ctx, userLoginInfo)
 	if loginErr != nil {
 		if errors.Is(loginErr, context.DeadlineExceeded) {
 			utils.WriteJsonResponse(w, 504, false, loginErr.Error(), nil)

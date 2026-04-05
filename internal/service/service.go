@@ -13,8 +13,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func CreateUserService(newUser model.User) (model.JwtAuthRes, error) {
-	_, fetchErr := repository.GetUserByEmail(newUser.Email)
+func CreateUserService(ctx context.Context, newUser model.User) (model.JwtAuthRes, error) {
+	_, fetchErr := repository.GetUserByEmail(ctx, newUser.Email)
 
 	if fetchErr == nil {
 		return model.JwtAuthRes{}, fmt.Errorf("user already exist")
@@ -34,7 +34,7 @@ func CreateUserService(newUser model.User) (model.JwtAuthRes, error) {
 	//save the string(hash) back to struct
 	newUser.Password = string(hashPass)
 	//passing the user details to the db-repository
-	userId, creationErr := repository.CreateUserRepo(newUser)
+	userId, creationErr := repository.CreateUserRepo(ctx, newUser)
 	if creationErr != nil {
 		return model.JwtAuthRes{}, fmt.Errorf("internal db error")
 	}
@@ -53,9 +53,9 @@ func CreateUserService(newUser model.User) (model.JwtAuthRes, error) {
 	return newUserRes, nil
 }
 
-func LoginService(userLoginInfo model.UserLogin) (model.JwtAuthRes, error) {
+func LoginService(ctx context.Context, userLoginInfo model.UserLogin) (model.JwtAuthRes, error) {
 	//check if user exist or not, if exist fetch the user details
-	userInfo, fetchErr := repository.GetUserByEmail(userLoginInfo.Email)
+	userInfo, fetchErr := repository.GetUserByEmail(ctx, userLoginInfo.Email)
 	if fetchErr != nil {
 
 		if errors.Is(fetchErr, sql.ErrNoRows) {
@@ -110,6 +110,12 @@ func UpdateService(ctx context.Context, userId int, userUpdateInfo model.UserUpd
 		if errors.Is(updateErr, sql.ErrNoRows) {
 			return model.User{}, fmt.Errorf("No user found:%w", updateErr)
 		}
+		if errors.Is(updateErr, context.DeadlineExceeded) {
+			return model.User{}, context.DeadlineExceeded
+		}
+		if errors.Is(updateErr, context.Canceled) || strings.Contains(updateErr.Error(), "canceling statement") {
+			return model.User{}, context.Canceled
+		}
 		return model.User{}, fmt.Errorf("Update user failed:%w", updateErr)
 	}
 
@@ -124,7 +130,13 @@ func DeleteUserService(ctx context.Context, userId int) (model.User, error) {
 	deletedUserRes, deleteErr := repository.DeleteUserRepo(ctx, userId)
 	if deleteErr != nil {
 		if errors.Is(deleteErr, sql.ErrNoRows) {
-			return model.User{UserId: userId}, nil
+			return model.User{}, nil
+		}
+		if errors.Is(deleteErr, context.DeadlineExceeded) {
+			return model.User{}, context.DeadlineExceeded
+		}
+		if errors.Is(deleteErr, context.Canceled) || strings.Contains(deleteErr.Error(), "canceling statement") {
+			return model.User{}, context.Canceled
 		}
 		return model.User{}, deleteErr
 	}
@@ -143,6 +155,9 @@ func MeService(ctx context.Context, userId int) (model.User, error) {
 		if errors.Is(userErr, context.DeadlineExceeded) {
 			return model.User{}, userErr
 		}
+		if errors.Is(userErr, context.Canceled) || strings.Contains(userErr.Error(), "canceling statement") {
+			return model.User{}, context.Canceled
+		}
 		if errors.Is(userErr, sql.ErrNoRows) {
 			return model.User{}, sql.ErrNoRows
 		}
@@ -157,6 +172,12 @@ func MeService(ctx context.Context, userId int) (model.User, error) {
 func FetchAllUsersService(ctx context.Context) ([]model.User, error) {
 	users, usersErr := repository.FetchAllUsersRepo(ctx)
 	if usersErr != nil {
+		if errors.Is(usersErr, context.DeadlineExceeded) {
+			return nil, usersErr
+		}
+		if errors.Is(usersErr, context.Canceled) || strings.Contains(usersErr.Error(), "canceling statement") {
+			return nil, context.Canceled
+		}
 		return nil, usersErr
 	}
 
