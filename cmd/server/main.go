@@ -5,6 +5,8 @@ import (
 	"ai-task-processor/internal/db"
 	"ai-task-processor/internal/handler"
 	"ai-task-processor/internal/middleware"
+	"ai-task-processor/internal/repository"
+	"ai-task-processor/internal/service"
 	"fmt"
 	"log"
 	"net/http"
@@ -23,15 +25,17 @@ func main() {
 	//Connect with DB
 	db.Init()
 	defer db.Db.Close()
-	//Register Routes
-	http.HandleFunc("/", handler.RootHandler)
-	http.HandleFunc("/health", handler.Health)
-	http.HandleFunc("/createuser", handler.CreateUserHandler) //post req
-	http.HandleFunc("/login", handler.LoginUserHandler)
-	http.Handle("/update", middleware.AuthMiddleware(http.HandlerFunc(handler.UpdateUserHandler))) //PATCH req
-	http.Handle("/delete", middleware.AuthMiddleware(http.HandlerFunc(handler.DeleteUserHandler))) //DELETE req
-	http.Handle("/me", middleware.AuthMiddleware(http.HandlerFunc(handler.MeHandler)))
-	http.Handle("/admin/users", middleware.AuthMiddleware(middleware.RoleMiddleware("ADMIN")(http.HandlerFunc(handler.FetchAllUsersHandler))))
+
+	repo := repository.NewPostgresUserRepo(db.Db)
+	svc := service.NewUserService(repo)
+	h := handler.NewUserHandler(svc)
+
+	http.HandleFunc("/createuser", h.CreateUserHandler) //post req
+	http.HandleFunc("/login", h.LoginUserHandler)
+	http.Handle("/update", middleware.AuthMiddleware(http.HandlerFunc(h.UpdateUserHandler))) //PATCH req
+	http.Handle("/delete", middleware.AuthMiddleware(http.HandlerFunc(h.DeleteUserHandler))) //DELETE req
+	http.Handle("/me", middleware.AuthMiddleware(http.HandlerFunc(h.MeHandler)))
+	http.Handle("/admin/users", middleware.AuthMiddleware(middleware.RoleMiddleware("ADMIN")(http.HandlerFunc(h.FetchAllUsersHandler))))
 
 	//Server
 	err := http.ListenAndServe(":6969", nil)

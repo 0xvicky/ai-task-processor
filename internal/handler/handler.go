@@ -12,16 +12,22 @@ import (
 	"time"
 )
 
+type UserHandler struct {
+	service *service.UserService
+}
+
+func NewUserHandler(s *service.UserService) *UserHandler {
+	return &UserHandler{
+		service: s,
+	}
+}
+
 // default route for "/"
 func RootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Ai Task Processor running on port 6969")
 }
 
-func Health(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Health is OK")
-}
-
-func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
@@ -37,7 +43,7 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIdPayload, userCreateErr := service.CreateUserService(ctx, newUser)
+	userIdPayload, userCreateErr := h.service.CreateUser(ctx, newUser)
 	if userCreateErr != nil {
 		if errors.Is(userCreateErr, context.DeadlineExceeded) {
 			utils.WriteJsonResponse(w, 504, false, userCreateErr.Error(), nil)
@@ -54,7 +60,7 @@ func CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJsonResponse(w, 201, true, "User Created ✅", userIdPayload)
 }
 
-func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
@@ -68,7 +74,7 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginPayload, loginErr := service.LoginService(ctx, userLoginInfo)
+	loginPayload, loginErr := h.service.LoginUser(ctx, userLoginInfo)
 	if loginErr != nil {
 		if errors.Is(loginErr, context.DeadlineExceeded) {
 			utils.WriteJsonResponse(w, 504, false, loginErr.Error(), nil)
@@ -87,7 +93,7 @@ func LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // update user info
-func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
@@ -102,7 +108,7 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userUpdateRes, updateErr := service.UpdateService(ctx, userId, updateUserInfo)
+	userUpdateRes, updateErr := h.service.UpdateUser(ctx, userId, updateUserInfo)
 
 	if updateErr != nil {
 		if errors.Is(updateErr, context.DeadlineExceeded) {
@@ -134,14 +140,14 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // delete user
-func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
 
 	userId := utils.ExtractUserId(r)
-	deletedUserRes, deleteErr := service.DeleteUserService(ctx, userId)
+	deletedUserRes, deleteErr := h.service.DeleteUser(ctx, userId)
 	if deleteErr != nil {
 		if errors.Is(deleteErr, context.DeadlineExceeded) {
 			utils.WriteJsonResponse(w, 504, false, "Context Timeout", nil)
@@ -158,7 +164,7 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJsonResponse(w, 200, true, "User Deleted", deletedUserRes)
 }
 
-func MeHandler(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) MeHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -166,7 +172,7 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 
 	userId := utils.ExtractUserId(r)
 
-	userRes, userErr := service.MeService(ctx, userId)
+	userRes, userErr := h.service.FetchUserById(ctx, userId)
 
 	if userErr != nil {
 		if errors.Is(userErr, context.DeadlineExceeded) {
@@ -185,13 +191,13 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func FetchAllUsersHandler(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) FetchAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
 
-	users, usersErr := service.FetchAllUsersService(ctx)
+	users, usersErr := h.service.FetchAllUsers(ctx)
 
 	if usersErr != nil {
 		if errors.Is(usersErr, context.DeadlineExceeded) {

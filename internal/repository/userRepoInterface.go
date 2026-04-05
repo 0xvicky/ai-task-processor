@@ -6,7 +6,7 @@ import (
 )
 
 type UserRepository interface {
-	CreateUser(userDetail model.User) (int, error)
+	CreateUser(ctx context.Context, userDetail model.User) (int, error)
 	GetUserByEmail(ctx context.Context, email string) (model.User, error)
 	UpdateUser(ctx context.Context, userId int, userUpdateDetail model.UserUpdate) (model.User, error)
 	DeleteUser(ctx context.Context, userId int) (model.User, error)
