@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"ai-task-processor/internal/apperrors"
 	"ai-task-processor/internal/constants"
 	"ai-task-processor/internal/model"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -26,6 +28,32 @@ func WriteJsonResponse(w http.ResponseWriter, statusCode int, status bool, messa
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 
+}
+
+func ErrorHandler(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, apperrors.ErrBadRequest):
+		WriteJsonResponse(w, 400, false, err.Error(), nil)
+	case errors.Is(err, apperrors.ErrInternal):
+		WriteJsonResponse(w, 401, false, err.Error(), nil)
+	case errors.Is(err, apperrors.ErrUnauthorized):
+		WriteJsonResponse(w, 401, false, err.Error(), nil)
+	case errors.Is(err, apperrors.ErrUserAlreadyExists):
+		WriteJsonResponse(w, 403, false, err.Error(), nil)
+	case errors.Is(err, apperrors.ErrCanceled):
+		WriteJsonResponse(w, 404, false, err.Error(), nil)
+	case errors.Is(err, apperrors.ErrForbidden):
+		WriteJsonResponse(w, 409, false, err.Error(), nil)
+	case errors.Is(err, apperrors.ErrInvalidCredentials):
+		WriteJsonResponse(w, 499, false, err.Error(), nil)
+	case errors.Is(err, apperrors.ErrUserNotFound):
+		WriteJsonResponse(w, 500, false, err.Error(), nil)
+	case errors.Is(err, apperrors.ErrDeadlineExceeded):
+		WriteJsonResponse(w, 504, false, err.Error(), nil)
+	default:
+		WriteJsonResponse(w, 500, false, "internal server error", nil)
+
+	}
 }
 
 // jwt secret key from .env
@@ -52,7 +80,7 @@ func JWTInit(userId int, userRole string) (string, error) {
 
 func ExtractUserId(r *http.Request) int {
 	userId, ok := r.Context().Value(constants.UserKey).(int)
-	fmt.Print(userId)
+	// fmt.Print(userId)
 	if !ok {
 		return 0
 	}

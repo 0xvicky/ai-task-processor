@@ -20,9 +20,9 @@ func NewPostgresUserRepo(db *sql.DB) UserRepository {
 func (r *PostgresUserRepository) CreateUser(ctx context.Context, userDetail model.User) (int, error) {
 	// println("in repo")
 	// fmt.Printf("%+v", userDetail)
-	createUserQuery := `INSERT INTO users(user_name, user_email, user_password, user_role) VALUES($1,$2,$3, $4) RETURNING user_id;`
+	createUserQuery := `INSERT INTO users(user_name, user_email, user_password) VALUES($1,$2,$3) RETURNING user_id;`
 
-	row := r.db.QueryRowContext(ctx, createUserQuery, userDetail.Name, userDetail.Email, userDetail.Password, userDetail.Role)
+	row := r.db.QueryRowContext(ctx, createUserQuery, userDetail.Name, userDetail.Email, userDetail.Password)
 
 	var newUserId int
 	scanErr := row.Scan(&newUserId)
@@ -101,11 +101,11 @@ func (r *PostgresUserRepository) DeleteUser(ctx context.Context, userId int) (mo
 func (r *PostgresUserRepository) GetUserById(ctx context.Context, userId int) (model.User, error) {
 	var userRes model.User
 
-	userFetchQuery := `SELECT user_id, user_name, user_email, created_at from users where user_id=$1;`
+	userFetchQuery := `SELECT user_id, user_name, user_email, user_role, created_at from users where user_id=$1;`
 	// userFetchQuery := `SELECT pg_sleep(6)`
 
 	userInfo := r.db.QueryRowContext(ctx, userFetchQuery, userId)
-	userScanErr := userInfo.Scan(&userRes.UserId, &userRes.Name, &userRes.Email, &userRes.CreatedAt)
+	userScanErr := userInfo.Scan(&userRes.UserId, &userRes.Name, &userRes.Email, &userRes.Role, &userRes.CreatedAt)
 
 	if userScanErr != nil {
 		if errors.Is(userScanErr, sql.ErrNoRows) {
@@ -123,7 +123,7 @@ func (r *PostgresUserRepository) FetchAllUsers(ctx context.Context) ([]model.Use
 	var users []model.User
 
 	//postgres query to fetch the whole data
-	allUsersQuery := `SELECT user_id, user_name, user_email, created_at from users;`
+	allUsersQuery := `SELECT user_id, user_name, user_email,user_role, created_at from users;`
 	userRows, allUserErr := r.db.QueryContext(ctx, allUsersQuery)
 
 	if allUserErr != nil {
@@ -135,7 +135,7 @@ func (r *PostgresUserRepository) FetchAllUsers(ctx context.Context) ([]model.Use
 	for userRows.Next() {
 
 		var user model.User
-		scanErr := userRows.Scan(&user.UserId, &user.Name, &user.Email, &user.CreatedAt)
+		scanErr := userRows.Scan(&user.UserId, &user.Name, &user.Email, &user.Role, &user.CreatedAt)
 		if scanErr != nil {
 			return nil, scanErr
 		}

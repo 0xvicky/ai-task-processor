@@ -1,13 +1,14 @@
 package service
 
 import (
+	apperrors "ai-task-processor/internal/apperrors"
+
 	"ai-task-processor/internal/model"
 	"ai-task-processor/internal/repository"
 	"ai-task-processor/internal/utils"
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -26,10 +27,11 @@ func (s *UserService) CreateUser(ctx context.Context, newUser model.User) (model
 	_, fetchErr := s.repo.GetUserByEmail(ctx, newUser.Email)
 
 	if fetchErr == nil {
-		return model.JwtAuthRes{}, fmt.Errorf("user already exist")
+		return model.JwtAuthRes{}, apperrors.ErrUserAlreadyExists
 	}
+
 	if !errors.Is(fetchErr, sql.ErrNoRows) {
-		return model.JwtAuthRes{}, fmt.Errorf("internal db error")
+		return model.JwtAuthRes{}, apperrors.ErrInternal
 	}
 
 	//get the password out of body
@@ -38,20 +40,26 @@ func (s *UserService) CreateUser(ctx context.Context, newUser model.User) (model
 	hashPass, hashErr := bcrypt.GenerateFromPassword([]byte(plainPass), bcrypt.DefaultCost)
 
 	if hashErr != nil {
-		return model.JwtAuthRes{}, fmt.Errorf("password hashing failed")
+		return model.JwtAuthRes{}, apperrors.ErrInternal
 	}
 	//save the string(hash) back to struct
 	newUser.Password = string(hashPass)
 	//passing the user details to the db-repository
 	userId, creationErr := s.repo.CreateUser(ctx, newUser)
 	if creationErr != nil {
-		return model.JwtAuthRes{}, fmt.Errorf("internal db error")
+		if errors.Is(creationErr, context.DeadlineExceeded) {
+			return model.JwtAuthRes{}, apperrors.ErrDeadlineExceeded
+		}
+		if errors.Is(creationErr, context.Canceled) {
+			return model.JwtAuthRes{}, apperrors.ErrCanceled
+		}
+		return model.JwtAuthRes{}, apperrors.ErrInternal
 	}
 
 	token, jwtErr := utils.JWTInit(userId, newUser.Role)
 
 	if jwtErr != nil {
-		return model.JwtAuthRes{}, fmt.Errorf("Error while generating jwt:%w", jwtErr)
+		return model.JwtAuthRes{}, apperrors.ErrInternal
 	}
 	newUserRes := model.JwtAuthRes{
 		UserId:   userId,
@@ -66,21 +74,24 @@ func (s *UserService) LoginUser(ctx context.Context, userLoginInfo model.UserLog
 	//check if user exist or not, if exist fetch the user details
 	userInfo, fetchErr := s.repo.GetUserByEmail(ctx, userLoginInfo.Email)
 	if fetchErr != nil {
+		if errors.Is(fetchErr, sql.ErrNoRows) {
+			return model.JwtAuthRes{}, apperrors.ErrInvalidCredentials
+		}
 
-		return model.JwtAuthRes{}, fmt.Errorf("invalid credentials:%w", fetchErr)
+		return model.JwtAuthRes{}, apperrors.ErrInternal
 	}
 	// //if exist, then hash the password and compare with stored hash pass
 
 	hashErr := bcrypt.CompareHashAndPassword([]byte(userInfo.Password), []byte(userLoginInfo.Password))
 	if hashErr != nil {
-		return model.JwtAuthRes{}, fmt.Errorf("invalid credentails")
+		return model.JwtAuthRes{}, apperrors.ErrInvalidCredentials
 		// w.WriteHeader(http.StatusBadRequest)
 	}
 
 	token, jwtErr := utils.JWTInit(userInfo.UserId, userInfo.Role)
 
 	if jwtErr != nil {
-		return model.JwtAuthRes{}, fmt.Errorf("Error while generating jwt:%w", jwtErr)
+		return model.JwtAuthRes{}, apperrors.ErrInternal
 	}
 
 	// fmt.Print(userInfo.UserId)
@@ -96,17 +107,23 @@ func (s *UserService) LoginUser(ctx context.Context, userLoginInfo model.UserLog
 
 func (s *UserService) UpdateUser(ctx context.Context, userId int, userUpdateInfo model.UserUpdate) (model.User, error) {
 	if userId == 0 {
-		return model.User{}, fmt.Errorf("invalid User Id")
+		return model.User{}, apperrors.ErrBadRequest
 	}
 	if userUpdateInfo.Email == nil && userUpdateInfo.Name == nil {
-		return model.User{}, fmt.Errorf("Both fields are empty !")
+		return model.User{}, apperrors.ErrBadRequest
 	}
 
 	updatedUserRes, updateErr := s.repo.UpdateUser(ctx, userId, userUpdateInfo)
 
 	if updateErr != nil {
+		if errors.Is(updateErr, context.DeadlineExceeded) {
+			return model.User{}, apperrors.ErrDeadlineExceeded
+		}
+		if errors.Is(updateErr, context.Canceled) {
+			return model.User{}, apperrors.ErrCanceled
+		}
 
-		return model.User{}, fmt.Errorf("Update user failed:%w", updateErr)
+		return model.User{}, apperrors.ErrInternal
 	}
 
 	return updatedUserRes, nil
@@ -114,28 +131,32 @@ func (s *UserService) UpdateUser(ctx context.Context, userId int, userUpdateInfo
 
 func (s *UserService) DeleteUser(ctx context.Context, userId int) (model.User, error) {
 	if userId == 0 {
-		return model.User{}, fmt.Errorf("Invalid User Id")
+		return model.User{}, apperrors.ErrBadRequest
 	}
 
 	deletedUserRes, deleteErr := s.repo.DeleteUser(ctx, userId)
 	if deleteErr != nil {
-
-		return model.User{}, deleteErr
+		if errors.Is(deleteErr, sql.ErrNoRows) {
+			return model.User{}, apperrors.ErrUserNotFound
+		}
+		return model.User{}, apperrors.ErrInternal
 	}
 	return deletedUserRes, nil
 }
 
 func (s *UserService) FetchUserById(ctx context.Context, userId int) (model.User, error) {
 	if userId == 0 {
-		return model.User{}, fmt.Errorf("Invalid User")
+		return model.User{}, apperrors.ErrBadRequest
 	}
 
 	userRes, userErr := s.repo.GetUserById(ctx, userId)
-
+	if errors.Is(userErr, sql.ErrNoRows) {
+		return model.User{}, apperrors.ErrUserNotFound
+	}
 	if userErr != nil {
 
 		// fmt.Print(userErr)
-		return model.User{}, userErr
+		return model.User{}, apperrors.ErrInternal
 	}
 
 	return userRes, nil
@@ -144,8 +165,13 @@ func (s *UserService) FetchUserById(ctx context.Context, userId int) (model.User
 func (s *UserService) FetchAllUsers(ctx context.Context) ([]model.User, error) {
 	users, usersErr := s.repo.FetchAllUsers(ctx)
 	if usersErr != nil {
-
-		return nil, usersErr
+		if errors.Is(usersErr, context.DeadlineExceeded) {
+			return nil, apperrors.ErrDeadlineExceeded
+		}
+		if errors.Is(usersErr, context.Canceled) {
+			return nil, apperrors.ErrCanceled
+		}
+		return nil, apperrors.ErrInternal
 	}
 
 	return users, nil
