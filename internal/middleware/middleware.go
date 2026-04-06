@@ -1,12 +1,15 @@
 package middleware
 
 import (
+	"ai-task-processor/internal/apperrors"
 	"ai-task-processor/internal/constants"
 	"ai-task-processor/internal/model"
 	"ai-task-processor/internal/utils"
 	"context"
+	"fmt"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"slices"
 	"strings"
 
@@ -89,4 +92,18 @@ func RoleMiddleware(allowedRoles ...string) func(http.Handler) http.Handler {
 		})
 	}
 
+}
+
+func RecoverMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				fmt.Println("PANIC RECOVERED:", err)
+				fmt.Println(string(debug.Stack())) //to know where panic occured
+				utils.ErrorHandler(w, apperrors.ErrInternal)
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
 }

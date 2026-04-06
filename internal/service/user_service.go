@@ -134,6 +134,7 @@ func (s *UserService) DeleteUser(ctx context.Context, userId int) (model.User, e
 		return model.User{}, apperrors.ErrBadRequest
 	}
 
+	defer recover()
 	deletedUserRes, deleteErr := s.repo.DeleteUser(ctx, userId)
 	if deleteErr != nil {
 		if errors.Is(deleteErr, sql.ErrNoRows) {

@@ -7,9 +7,7 @@ import (
 	"os"
 )
 
-var Db *sql.DB
-
-func Init() {
+func Init() (*sql.DB, error) {
 
 	var (
 		port              = os.Getenv("PORT")
@@ -23,15 +21,16 @@ func Init() {
 		"password=%s dbname=%s sslmode=disable",
 		port, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)
 
-	var dbErr error
-	Db, dbErr = sql.Open("postgres", psqlInfo)
+	db, dbErr := sql.Open("postgres", psqlInfo)
 	if dbErr != nil {
-		panic(dbErr)
+		return nil, dbErr
 	}
 
-	dbPingErr := Db.Ping()
+	dbPingErr := db.Ping()
 	if dbPingErr != nil {
-		log.Fatal(dbPingErr)
+		return nil, dbPingErr
 	}
-	println("Db Connected !!")
+	log.Println("Db connected ✅")
+
+	return db, nil
 }
