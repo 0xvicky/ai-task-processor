@@ -17,12 +17,13 @@ import (
 func main() {
 	println("AI-TASK-PROCESSOR")
 
+	//load the env
 	envErr := config.EnvInit()
 	if envErr != nil {
 		fmt.Println("Env load error")
 		return
 	}
-	//Connect with DB
+	//Db intialization and connection
 	db.Init()
 	defer db.Db.Close()
 

@@ -5,6 +5,7 @@ import (
 	"ai-task-processor/internal/service"
 	"ai-task-processor/internal/utils"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -148,6 +149,10 @@ func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) 
 
 	userId := utils.ExtractUserId(r)
 	deletedUserRes, deleteErr := h.service.DeleteUser(ctx, userId)
+	if errors.Is(deleteErr, sql.ErrNoRows) {
+		utils.WriteJsonResponse(w, 200, true, "User Delete Success", nil)
+		return
+	}
 	if deleteErr != nil {
 		if errors.Is(deleteErr, context.DeadlineExceeded) {
 			utils.WriteJsonResponse(w, 504, false, "Context Timeout", nil)
