@@ -231,7 +231,7 @@ This project intentionally avoids:
 ## 🔗 Getting Started
 
 ```bash
-git clone <your-repo>
+git clone https://github.com/0xvicky/ai-task-processor
 cd ai-task-processor
 go run cmd/server/main.go
 ```
