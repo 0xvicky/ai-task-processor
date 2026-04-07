@@ -42,3 +42,8 @@ type JwtClaims struct {
 	UserRole string `json:"userRole"`
 	jwt.RegisteredClaims
 }
+
+type Task struct {
+	TaskId int `json:"taskId"`
+	UserId int `json:"UserId"`
+}
