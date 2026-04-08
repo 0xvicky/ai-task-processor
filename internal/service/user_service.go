@@ -4,7 +4,7 @@ import (
 	apperrors "ai-task-processor/internal/apperrors"
 
 	"ai-task-processor/internal/model"
-	"ai-task-processor/internal/repository"
+	"ai-task-processor/internal/repository/user"
 	"ai-task-processor/internal/utils"
 	"context"
 	"database/sql"
@@ -14,10 +14,10 @@ import (
 )
 
 type UserService struct {
-	repo repository.UserRepository
+	repo user.UserRepository
 }
 
-func NewUserService(repo repository.UserRepository) *UserService {
+func NewUserService(repo user.UserRepository) *UserService {
 	return &UserService{
 		repo: repo,
 	}

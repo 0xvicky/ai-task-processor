@@ -44,6 +44,10 @@ type JwtClaims struct {
 }
 
 type Task struct {
-	TaskId int `json:"taskId"`
-	UserId int `json:"UserId"`
+	TaskId    int    `json:"taskId"`
+	UserId    int    `json:"UserId"`
+	TaskType  string `json:"taskType,omitempty"`
+	Status    string `json:"status,omitempty"`
+	Result    any    `json:"result,omitempty"`
+	CreatedAt time.Time
 }

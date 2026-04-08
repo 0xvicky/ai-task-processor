@@ -5,7 +5,7 @@ import (
 	"ai-task-processor/internal/db"
 	"ai-task-processor/internal/handler"
 	m "ai-task-processor/internal/middleware"
-	"ai-task-processor/internal/repository"
+	"ai-task-processor/internal/repository/user"
 	"ai-task-processor/internal/service"
 	"fmt"
 	"log"
@@ -30,7 +30,7 @@ func main() {
 	}
 	defer dbConn.Close()
 
-	repo := repository.NewPostgresUserRepo(dbConn)
+	repo := user.NewPostgresUserRepo(dbConn)
 	svc := service.NewUserService(repo)
 	h := handler.NewUserHandler(svc)
 
