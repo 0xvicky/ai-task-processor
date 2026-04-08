@@ -82,7 +82,7 @@ func (h *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) 
 
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
-	userId := utils.ExtractUserId(ctx)
+	userId := utils.ExtractUserId(r)
 	var updateUserInfo model.UserUpdate
 
 	decoder := json.NewDecoder(r.Body)
@@ -122,7 +122,7 @@ func (h *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) 
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
 
-	userId := utils.ExtractUserId(ctx)
+	userId := utils.ExtractUserId(r)
 	deletedUserRes, deleteErr := h.service.DeleteUser(ctx, userId)
 	if errors.Is(deleteErr, sql.ErrNoRows) {
 		utils.WriteJsonResponse(w, 200, true, "User Delete Success", nil)
@@ -142,7 +142,7 @@ func (h *UserHandler) MeHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel() //clean the messup, resources, called when function returns
 
-	userId := utils.ExtractUserId(ctx)
+	userId := utils.ExtractUserId(r)
 
 	userRes, userErr := h.service.FetchUserById(ctx, userId)
 

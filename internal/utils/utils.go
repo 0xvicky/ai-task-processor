@@ -4,7 +4,6 @@ import (
 	"ai-task-processor/internal/apperrors"
 	"ai-task-processor/internal/constants"
 	"ai-task-processor/internal/model"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -79,8 +78,8 @@ func JWTInit(userId int, userRole string) (string, error) {
 	return tokenString, nil
 }
 
-func ExtractUserId(ctx context.Context) int {
-	userId, ok := ctx.Value(constants.UserKey).(int)
+func ExtractUserId(r *http.Request) int {
+	userId, ok := r.Context().Value(constants.UserKey).(int)
 	// fmt.Print(userId)
 	if !ok {
 		return 0

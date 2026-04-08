@@ -13,7 +13,7 @@ type TaskService struct {
 	taskRepo task.TaskRepository
 }
 
-func NewTaskRepository(taskRepo task.TaskRepository) *TaskService {
+func NewTaskService(taskRepo task.TaskRepository) *TaskService {
 	return &TaskService{
 		taskRepo: taskRepo,
 	}

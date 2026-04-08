@@ -4,8 +4,9 @@ import (
 	"ai-task-processor/internal/config"
 	"ai-task-processor/internal/db"
 	"ai-task-processor/internal/handler"
-	m "ai-task-processor/internal/middleware"
+	"ai-task-processor/internal/repository/task"
 	"ai-task-processor/internal/repository/user"
+	"ai-task-processor/internal/routes"
 	"ai-task-processor/internal/service"
 	"fmt"
 	"log"
@@ -30,17 +31,19 @@ func main() {
 	}
 	defer dbConn.Close()
 
+	//User services and handlers
 	repo := user.NewPostgresUserRepo(dbConn)
 	svc := service.NewUserService(repo)
 	h := handler.NewUserHandler(svc)
 
-	http.Handle("/createuser", m.Public(http.HandlerFunc(h.CreateUserHandler))) //post req
-	http.Handle("/login", m.Public(http.HandlerFunc(h.LoginUserHandler)))
-
-	http.Handle("/update", m.Protected(http.HandlerFunc(h.UpdateUserHandler))) //PATCH req
-	http.Handle("/delete", m.Protected(http.HandlerFunc(h.DeleteUserHandler))) //DELETE req
-	http.Handle("/me", m.Protected(http.HandlerFunc(h.MeHandler)))
-	http.Handle("/admin/users", m.Admin(http.HandlerFunc(h.FetchAllUsersHandler)))
+	//Task services and handlers
+	tr := task.NewPostgresTaskRepo(dbConn)
+	ts := service.NewTaskService(tr)
+	th := handler.NewTaskHandler(ts)
+	//User Routes
+	routes.UserRoutes(h)
+	//Task Handlers
+	routes.TaskRoutes(th)
 
 	//Server
 	err := http.ListenAndServe(":6969", nil)
