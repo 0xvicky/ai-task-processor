@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -43,11 +44,36 @@ type JwtClaims struct {
 	jwt.RegisteredClaims
 }
 
+// Task Models
+type TaskStatus string
+
+const (
+	StatusPending   TaskStatus = "PENDING"
+	StatusRunning   TaskStatus = "RUNNING"
+	StatusCompleted TaskStatus = "COMPLETED"
+	StatusFailed    TaskStatus = "FAILED"
+)
+
+type TaskType string
+
+const (
+	AIText     TaskType = "AI_TEXT_GEN"
+	AIImageGen TaskType = "AI_IMAGE_GEN"
+)
+
 type Task struct {
-	TaskId    int    `json:"taskId"`
-	UserId    int    `json:"UserId"`
-	TaskType  string `json:"taskType,omitempty"`
-	Status    string `json:"status,omitempty"`
-	Result    any    `json:"result,omitempty"`
+	TaskId    int             `json:"taskId"`
+	UserId    int             `json:"UserId"`
+	TaskType  TaskType        `json:"taskType,omitempty"`
+	Status    TaskStatus      `json:"status,omitempty"`
+	Result    json.RawMessage `json:"result,omitempty"`
+	Payload   json.RawMessage `json:"payload,omitempty"`
+	Error     string          `json:"error,omitempty"`
 	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type CreateTask struct {
+	TaskType TaskType        `json:"taskType"`
+	Payload  json.RawMessage `json:"payload"`
 }

@@ -12,4 +12,5 @@ var (
 	ErrDeadlineExceeded   = errors.New("request time out")
 	ErrCanceled           = errors.New("request cancelled")
 	ErrBadRequest         = errors.New("bad request")
+	ErrTaskNotFound       = errors.New("task not found")
 )
