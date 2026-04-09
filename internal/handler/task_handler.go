@@ -49,3 +49,7 @@ func (h *TaskHandler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) 
 	utils.WriteJsonResponse(w, 201, true, "task created successfully", newTaskPayload)
 
 }
+
+func (h *TaskHandler) GetTaskById(w http.ResponseWriter, r *http.Request) {
+
+}
