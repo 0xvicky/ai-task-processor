@@ -51,5 +51,7 @@ func (h *TaskHandler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *TaskHandler) GetTaskById(w http.ResponseWriter, r *http.Request) {
-
+	r.Body.Close()
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
 }
