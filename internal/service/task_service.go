@@ -85,3 +85,18 @@ func (t *TaskService) GetTasksByUser(ctx context.Context, userId int) ([]model.T
 	return tasks, nil
 
 }
+
+func (t *TaskService) GetAllTasks(ctx context.Context) ([]model.Task, error) {
+	tasks, tasksErr := t.taskRepo.GetAllTasks(ctx)
+	if tasksErr != nil {
+		//context errors
+		if errors.Is(tasksErr, context.DeadlineExceeded) {
+			return nil, apperrors.ErrDeadlineExceeded
+		}
+		if errors.Is(tasksErr, context.Canceled) {
+			return nil, apperrors.ErrCanceled
+		}
+		return nil, apperrors.ErrInternal
+	}
+	return tasks, nil
+}

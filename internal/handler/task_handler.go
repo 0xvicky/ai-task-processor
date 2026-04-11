@@ -56,7 +56,7 @@ func (h *TaskHandler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) 
 
 }
 
-func (h *TaskHandler) GetTaskById(w http.ResponseWriter, r *http.Request) {
+func (h *TaskHandler) TaskByIdHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
@@ -81,10 +81,10 @@ func (h *TaskHandler) GetTaskById(w http.ResponseWriter, r *http.Request) {
 		utils.ErrorHandler(w, taskErr)
 		return
 	}
-	utils.WriteJsonResponse(w, 200, true, "Task Fetched", task)
+	utils.WriteJsonResponse(w, 200, true, "task fetched", task)
 }
 
-func (h *TaskHandler) GetTasksByUser(w http.ResponseWriter, r *http.Request) {
+func (h *TaskHandler) TasksByUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
@@ -101,6 +101,21 @@ func (h *TaskHandler) GetTasksByUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJsonResponse(w, 200, true, "Tasks Fetched", tasks)
+	utils.WriteJsonResponse(w, 200, true, "tasks fetched", tasks)
+
+}
+
+func (h *TaskHandler) AllTasksHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
+	tasks, taskErr := h.service.GetAllTasks(ctx)
+	if taskErr != nil {
+		utils.ErrorHandler(w, taskErr)
+		return
+	}
+
+	utils.WriteJsonResponse(w, 200, true, "all tasks fetched", tasks)
 
 }

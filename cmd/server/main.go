@@ -3,6 +3,7 @@ package main
 import (
 	"ai-task-processor/internal/config"
 	"ai-task-processor/internal/db"
+	"ai-task-processor/internal/engine"
 	"ai-task-processor/internal/handler"
 	"ai-task-processor/internal/repository/task"
 	"ai-task-processor/internal/repository/user"
@@ -40,11 +41,14 @@ func main() {
 	tr := task.NewPostgresTaskRepo(dbConn)
 	ts := service.NewTaskService(tr)
 	th := handler.NewTaskHandler(ts)
-	//User Routes
+
+	//routes
 	routes.UserRoutes(h)
-	//Task Handlers
+
 	routes.TaskRoutes(th)
 
+	//Worker Engine
+	engine.StartEngine(tr, 5)
 	//Server
 	err := http.ListenAndServe(":6969", nil)
 

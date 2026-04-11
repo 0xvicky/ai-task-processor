@@ -54,7 +54,7 @@ func (t *PostgresTaskRepository) GetTaskById(ctx context.Context, taskId int, us
 
 func (t *PostgresTaskRepository) GetTasksByUser(ctx context.Context, userId int) ([]model.Task, error) {
 	var tasks []model.Task
-	log.Print("userid:%w", userId)
+	// log.Print("userid:%w", userId)
 
 	fetchTasksQuery := `SELECT task_id,user_id, task_type, status, result, error, created_at, updated_at from tasks WHERE user_id = $1;`
 
@@ -99,4 +99,34 @@ func (t *PostgresTaskRepository) UpdateTaskStatus(ctx context.Context, taskId in
 	}
 
 	return true, nil
+}
+
+func (t *PostgresTaskRepository) GetAllTasks(ctx context.Context) ([]model.Task, error) {
+	var tasks []model.Task
+	tasksQuery := `SELECT task_id,user_id, task_type, status, result, error, created_at, updated_at from tasks;`
+	tasksRows, rowsErr := t.db.QueryContext(ctx, tasksQuery)
+	if rowsErr != nil {
+		return nil, rowsErr
+	}
+
+	if tasksRows.Next() {
+		var newTask model.Task
+		var resultBytes []byte
+		scanErr := tasksRows.Scan(&newTask.TaskId, &newTask.UserId, &newTask.TaskType, &newTask.Status, &resultBytes, &newTask.Error, &newTask.CreatedAt, &newTask.UpdatedAt)
+		if newTask.Result != nil {
+			newTask.Result = json.RawMessage(resultBytes)
+		} else {
+			newTask.Result = json.RawMessage(`{}`)
+		}
+		if scanErr != nil {
+			return nil, scanErr
+		}
+
+		tasks = append(tasks, newTask)
+	}
+
+	if tasksRows.Err() != nil {
+		return nil, tasksRows.Err()
+	}
+	return tasks, nil
 }
