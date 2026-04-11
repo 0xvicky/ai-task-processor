@@ -34,6 +34,8 @@ func ErrorHandler(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, apperrors.ErrBadRequest):
 		WriteJsonResponse(w, 400, false, err.Error(), nil)
+	case errors.Is(err, apperrors.ErrTaskNotFound):
+		WriteJsonResponse(w, 400, false, err.Error(), nil)
 	case errors.Is(err, apperrors.ErrInternal):
 		WriteJsonResponse(w, 401, false, err.Error(), nil)
 	case errors.Is(err, apperrors.ErrUnauthorized):
@@ -78,11 +80,11 @@ func JWTInit(userId int, userRole string) (string, error) {
 	return tokenString, nil
 }
 
-func ExtractUserId(r *http.Request) int {
+func ExtractUserId(r *http.Request) (int, error) {
 	userId, ok := r.Context().Value(constants.UserKey).(int)
 	// fmt.Print(userId)
 	if !ok {
-		return 0
+		return 0, apperrors.ErrUnauthorized
 	}
-	return userId
+	return userId, nil
 }

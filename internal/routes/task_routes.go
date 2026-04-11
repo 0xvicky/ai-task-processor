@@ -7,5 +7,7 @@ import (
 )
 
 func TaskRoutes(th *handler.TaskHandler) {
-	http.Handle("/newtask", m.Public(http.HandlerFunc(th.CreateTaskHandler)))
+	http.Handle("/newTask", m.Protected(http.HandlerFunc(th.CreateTaskHandler)))
+	http.Handle("/getTask", m.Protected(http.HandlerFunc(th.GetTaskById)))
+	http.Handle("/getAllTasks", m.Protected(http.HandlerFunc(th.GetTasksByUser)))
 }

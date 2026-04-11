@@ -6,6 +6,7 @@ import (
 	"ai-task-processor/internal/utils"
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 )
@@ -21,7 +22,7 @@ func NewTaskHandler(svc *service.TaskService) *TaskHandler {
 }
 
 func (h *TaskHandler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
-	r.Body.Close()
+	defer r.Body.Close()
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
 
@@ -29,11 +30,16 @@ func (h *TaskHandler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) 
 	decoder := json.NewDecoder(r.Body)
 	decodeErr := decoder.Decode(&newTask)
 	if decodeErr != nil {
+		log.Print("Error in handler here")
 		utils.ErrorHandler(w, decodeErr)
 		return
 	}
-
-	userId := utils.ExtractUserId(r)
+	log.Print(newTask)
+	userId, userIdErr := utils.ExtractUserId(r)
+	if userIdErr != nil {
+		utils.ErrorHandler(w, userIdErr)
+		return
+	}
 	taskId, createTaskErr := h.service.CreateTask(ctx, newTask, userId)
 
 	if createTaskErr != nil {
@@ -51,7 +57,50 @@ func (h *TaskHandler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *TaskHandler) GetTaskById(w http.ResponseWriter, r *http.Request) {
-	r.Body.Close()
+	defer r.Body.Close()
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
+	userId, userIdErr := utils.ExtractUserId(r)
+	if userIdErr != nil {
+		utils.ErrorHandler(w, userIdErr)
+		return
+	}
+	var req struct {
+		TaskId int `json:"taskId"`
+	}
+	decoder := json.NewDecoder(r.Body)
+	decodeErr := decoder.Decode(&req)
+	if decodeErr != nil {
+
+		utils.ErrorHandler(w, decodeErr)
+		return
+	}
+
+	task, taskErr := h.service.GetTaskById(ctx, req.TaskId, userId)
+	if taskErr != nil {
+		utils.ErrorHandler(w, taskErr)
+		return
+	}
+	utils.WriteJsonResponse(w, 200, true, "Task Fetched", task)
+}
+
+func (h *TaskHandler) GetTasksByUser(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
+	userId, userIdErr := utils.ExtractUserId(r)
+	if userIdErr != nil {
+		utils.ErrorHandler(w, userIdErr)
+		return
+	}
+
+	tasks, tasksErr := h.service.GetTasksByUser(ctx, userId)
+	if tasksErr != nil {
+		utils.ErrorHandler(w, tasksErr)
+		return
+	}
+
+	utils.WriteJsonResponse(w, 200, true, "Tasks Fetched", tasks)
+
 }

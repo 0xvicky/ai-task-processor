@@ -63,12 +63,12 @@ const (
 
 type Task struct {
 	TaskId    int             `json:"taskId"`
-	UserId    int             `json:"UserId"`
+	UserId    int             `json:"userId"`
 	TaskType  TaskType        `json:"taskType,omitempty"`
 	Status    TaskStatus      `json:"status,omitempty"`
 	Result    json.RawMessage `json:"result,omitempty"`
 	Payload   json.RawMessage `json:"payload,omitempty"`
-	Error     string          `json:"error,omitempty"`
+	Error     *string         `json:"error,omitempty"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

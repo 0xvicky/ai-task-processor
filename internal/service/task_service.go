@@ -7,6 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 )
 
 type TaskService struct {
@@ -36,9 +37,16 @@ func (t *TaskService) CreateTask(ctx context.Context, newTask model.CreateTask, 
 	taskId, createTaskErr := t.taskRepo.CreateTask(ctx, task)
 	if createTaskErr != nil {
 		//add context deadline and cancelled errors
+		if errors.Is(createTaskErr, context.DeadlineExceeded) {
+			return 0, apperrors.ErrDeadlineExceeded
+		}
+		if errors.Is(createTaskErr, context.Canceled) {
+			return 0, apperrors.ErrCanceled
+		}
+		log.Print("Error here")
 		return 0, apperrors.ErrInternal
 	}
-
+	log.Print(taskId)
 	return taskId, nil
 }
 
@@ -46,7 +54,12 @@ func (t *TaskService) GetTaskById(ctx context.Context, taskId int, userId int) (
 	task, fetchErr := t.taskRepo.GetTaskById(ctx, taskId, userId)
 	if fetchErr != nil {
 		//context errors
-
+		if errors.Is(fetchErr, context.DeadlineExceeded) {
+			return model.Task{}, apperrors.ErrDeadlineExceeded
+		}
+		if errors.Is(fetchErr, context.Canceled) {
+			return model.Task{}, apperrors.ErrCanceled
+		}
 		if errors.Is(fetchErr, sql.ErrNoRows) {
 			return model.Task{}, apperrors.ErrTaskNotFound
 		}
@@ -60,7 +73,12 @@ func (t *TaskService) GetTasksByUser(ctx context.Context, userId int) ([]model.T
 	tasks, tasksErr := t.taskRepo.GetTasksByUser(ctx, userId)
 	if tasksErr != nil {
 		//context errors
-
+		if errors.Is(tasksErr, context.DeadlineExceeded) {
+			return nil, apperrors.ErrDeadlineExceeded
+		}
+		if errors.Is(tasksErr, context.Canceled) {
+			return nil, apperrors.ErrCanceled
+		}
 		return nil, apperrors.ErrInternal
 	}
 
