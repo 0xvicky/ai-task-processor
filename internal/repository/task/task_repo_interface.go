@@ -11,4 +11,5 @@ type TaskRepository interface {
 	GetTasksByUser(ctx context.Context, userId int) ([]model.Task, error)
 	UpdateTaskStatus(ctx context.Context, taskId int, taskStatus model.TaskStatus) (bool, error)
 	GetAllTasks(ctx context.Context) ([]model.Task, error)
+	FetchBatch() ([]model.BatchFetcher, error)
 }

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	_ "github.com/lib/pq"
 )
@@ -40,6 +41,7 @@ func main() {
 	//Task services and handlers
 	tr := task.NewPostgresTaskRepo(dbConn)
 	ts := service.NewTaskService(tr)
+	tps := service.NewTaskProcessing(tr)
 	th := handler.NewTaskHandler(ts)
 
 	//routes
@@ -48,7 +50,9 @@ func main() {
 	routes.TaskRoutes(th)
 
 	//Worker Engine
-	engine.StartEngine(tr, 5)
+	var wg sync.WaitGroup
+	engine.StartEngine(tps, 5, &wg)
+	// wg.Wait()
 	//Server
 	err := http.ListenAndServe(":6969", nil)
 

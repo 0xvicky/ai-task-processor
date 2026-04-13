@@ -130,3 +130,29 @@ func (t *PostgresTaskRepository) GetAllTasks(ctx context.Context) ([]model.Task,
 	}
 	return tasks, nil
 }
+
+func (t *PostgresTaskRepository) FetchBatch() ([]model.BatchFetcher, error) {
+	var batch []model.BatchFetcher
+	batchQuery := `UPDATE tasks SET status='RUNNING' WHERE task_id IN(SELECT task_id from tasks WHERE status='PENDING' ORDER BY task_id LIMIT 5) RETURNING task_id, user_id, payload`
+	//later we'll add the logic to fetch the tasks having difference between last updated and time started greater than threshodl
+	rows, rowsErr := t.db.Query(batchQuery)
+	if rowsErr != nil {
+		return nil, rowsErr
+	}
+
+	if rows.Next() {
+
+		var task model.BatchFetcher
+		scanErr := rows.Scan(&task.TaskId, &task.UserId, &task.Payload)
+		if scanErr != nil {
+			return nil, scanErr
+		}
+		batch = append(batch, task)
+	}
+
+	if rowsErr := rows.Err(); rowsErr != nil {
+		return nil, rowsErr
+	}
+
+	return batch, nil
+}

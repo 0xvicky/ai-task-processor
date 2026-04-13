@@ -77,3 +77,9 @@ type CreateTask struct {
 	TaskType TaskType        `json:"taskType"`
 	Payload  json.RawMessage `json:"payload"`
 }
+
+type BatchFetcher struct {
+	TaskId  int             `json:"taskId"`
+	UserId  int             `json:"userId"`
+	Payload json.RawMessage `json:"payload,omitempty"`
+}
