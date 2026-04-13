@@ -116,7 +116,7 @@ func (t *PostgresTaskRepository) GetAllTasks(ctx context.Context) ([]model.Task,
 
 func (t *PostgresTaskRepository) FetchBatch() ([]model.BatchFetcher, error) {
 	var batch []model.BatchFetcher
-	batchQuery := `UPDATE tasks SET status='RUNNING' WHERE task_id IN(SELECT task_id from tasks WHERE status='PENDING' ORDER BY task_id LIMIT 5) RETURNING task_id, user_id, payload`
+	batchQuery := `UPDATE tasks SET status='RUNNING', updated_at=NOW() WHERE task_id IN(SELECT task_id from tasks WHERE status = 'PENDING' ORDER BY task_id LIMIT 5) RETURNING task_id, user_id, payload`
 	//later we'll add the logic to fetch the tasks having difference between last updated and time started greater than threshodl
 	rows, rowsErr := t.db.Query(batchQuery)
 	if rowsErr != nil {
@@ -146,13 +146,13 @@ func (t *PostgresTaskRepository) UpdateTaskStatus(taskUpdate model.TaskUpdate) (
 	i := 3
 
 	if taskUpdate.Result != nil {
-		updateQuery += fmt.Sprintf(", result=$i")
-		args = append(args, taskUpdate.Result)
+		updateQuery += fmt.Sprintf(", result=$%d", i)
+		args = append(args, *taskUpdate.Result)
 		i++
 	}
 	if taskUpdate.Error != nil {
-		updateQuery += fmt.Sprintf(", error=$i")
-		args = append(args, taskUpdate.Error)
+		updateQuery += fmt.Sprintf(", error=$%d", i)
+		args = append(args, *taskUpdate.Error)
 		i++
 	}
 	updateQuery += fmt.Sprintf(" WHERE task_id=$%d", i)
