@@ -83,3 +83,11 @@ type BatchFetcher struct {
 	UserId  int             `json:"userId"`
 	Payload json.RawMessage `json:"payload,omitempty"`
 }
+
+type TaskUpdate struct {
+	TaskId    int              `json:"taskId"`
+	Status    TaskStatus       `json:"taskStatus,omitempty"`
+	Result    *json.RawMessage `json:"result"`
+	Error     *string          `json:"error"`
+	UpdatedAt time.Time
+}

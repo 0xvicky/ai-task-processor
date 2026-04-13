@@ -4,7 +4,6 @@ import (
 	"ai-task-processor/internal/model"
 	"ai-task-processor/internal/service"
 	"encoding/json"
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -34,12 +33,29 @@ func workerExec(workerId int, wg *sync.WaitGroup, workerQueue <-chan model.Batch
 	//track the channel
 	for task := range workerQueue {
 		//if task found, execute
-		taskPayload := task.Payload
+		// taskPayload := task.Payload
+		log.Println("Picked task no:%w", task.TaskId)
 		taskId := task.TaskId
 		//simulate the processing
 		time.Sleep(2 * time.Second)
 		rawResult := `{"result":"This is result for the task payload"}`
 		result := json.RawMessage(rawResult)
+
+		var taskUpdate = model.TaskUpdate{
+			TaskId:    taskId,
+			Result:    &result,
+			Error:     nil,
+			UpdatedAt: time.Now(),
+		}
+
+		taskUpdate.Status = model.StatusCompleted
+
+		res, updateErr := tps.UpdateTask(taskUpdate)
+		if updateErr != nil {
+			println("Failed to update task")
+			continue
+		}
+		println("Task updated:%w", res)
 
 	}
 
@@ -51,7 +67,7 @@ func batchFetcherInit(tps *service.TaskProcessingService, workerQueue chan<- mod
 	for {
 		batch, batchErr := tps.FetchBatch()
 		if batchErr != nil {
-			fmt.Errorf("Batch error")
+			log.Println("Batch error")
 			continue
 		}
 		if len(batch) <= 0 {
@@ -60,6 +76,7 @@ func batchFetcherInit(tps *service.TaskProcessingService, workerQueue chan<- mod
 			continue
 		}
 		for _, task := range batch {
+			log.Println("Put Task:%w in the queue", task.TaskId)
 			workerQueue <- task
 		}
 	}

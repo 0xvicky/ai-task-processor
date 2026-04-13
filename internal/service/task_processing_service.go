@@ -23,3 +23,13 @@ func (t *TaskProcessingService) FetchBatch() ([]model.BatchFetcher, error) {
 	}
 	return batch, nil
 }
+
+func (t *TaskProcessingService) UpdateTask(taskUpdate model.TaskUpdate) (bool, error) {
+	_, err := t.taskRepo.UpdateTaskStatus(taskUpdate)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}

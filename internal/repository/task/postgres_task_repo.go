@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 )
 
@@ -83,24 +84,6 @@ func (t *PostgresTaskRepository) GetTasksByUser(ctx context.Context, userId int)
 	return tasks, nil
 }
 
-func (t *PostgresTaskRepository) UpdateTaskStatus(ctx context.Context, taskId int, taskStatus model.TaskStatus) (bool, error) {
-	updateQuery := `UPDATE tasks SET status = $1 WHERE task_id=$2;`
-	result, err := t.db.ExecContext(ctx, updateQuery, taskStatus, taskId)
-	if err != nil {
-		return false, err
-	}
-
-	rowAff, err := result.RowsAffected()
-	if err != nil {
-		return false, err
-	}
-	if rowAff == 0 {
-		return false, sql.ErrNoRows
-	}
-
-	return true, nil
-}
-
 func (t *PostgresTaskRepository) GetAllTasks(ctx context.Context) ([]model.Task, error) {
 	var tasks []model.Task
 	tasksQuery := `SELECT task_id,user_id, task_type, status, result, error, created_at, updated_at from tasks;`
@@ -155,4 +138,31 @@ func (t *PostgresTaskRepository) FetchBatch() ([]model.BatchFetcher, error) {
 	}
 
 	return batch, nil
+}
+
+func (t *PostgresTaskRepository) UpdateTaskStatus(taskUpdate model.TaskUpdate) (bool, error) {
+	updateQuery := `UPDATE tasks SET status=$1, updated_at=$2`
+	args := []any{taskUpdate.Status, taskUpdate.UpdatedAt}
+	i := 3
+
+	if taskUpdate.Result != nil {
+		updateQuery += fmt.Sprintf(", result=$i")
+		args = append(args, taskUpdate.Result)
+		i++
+	}
+	if taskUpdate.Error != nil {
+		updateQuery += fmt.Sprintf(", error=$i")
+		args = append(args, taskUpdate.Error)
+		i++
+	}
+	updateQuery += fmt.Sprintf(" WHERE task_id=$%d", i)
+	args = append(args, taskUpdate.TaskId)
+
+	//execute
+	_, err := t.db.Exec(updateQuery, args...)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
