@@ -18,7 +18,6 @@ import (
 )
 
 func main() {
-	println("AI-TASK-PROCESSOR")
 
 	//load the env
 	envErr := config.EnvInit()
